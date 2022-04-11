@@ -7,5 +7,6 @@ import (
 
 func main() {
 	dao.InitDB()
+	dao.InitRDB()
 	api.InitEngine()
 }
