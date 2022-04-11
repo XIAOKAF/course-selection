@@ -11,7 +11,7 @@ func InitEngine() {
 	administratorGroup := engine.Group("/administrator")
 	{
 		administratorGroup.POST("/login", administratorLogin) //管理员登录
-		administratorGroup.POST("/remember")
+		administratorGroup.POST("/remember", RememberStatus)  //记住登录状态
 	}
 	//学生
 	//教师
