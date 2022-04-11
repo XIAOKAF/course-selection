@@ -1,7 +1,7 @@
 package model
 
 type Administrator struct {
-	AdministratorId string
+	AdministratorId string `gorm:"primary_key"`
 	Password        string
 	RuleLevel       string
 }
