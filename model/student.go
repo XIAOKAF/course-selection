@@ -1,7 +1,7 @@
 package model
 
 type Student struct {
-	StudentId   int
+	StudentId   int `gorm:"primary_key"`
 	UnifiedCode string
 	StudentName string
 	Gender      int
