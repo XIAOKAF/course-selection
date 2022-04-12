@@ -10,6 +10,7 @@ func InitEngine() {
 	//高级管理员
 	administratorGroup := engine.Group("/administrator")
 	{
+		administratorGroup.Use(parseToken)                    //解析token
 		administratorGroup.POST("/login", administratorLogin) //管理员登录
 		administratorGroup.POST("/remember", RememberStatus)  //记住登录状态
 	}
