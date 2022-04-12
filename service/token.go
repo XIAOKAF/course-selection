@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var jwtKey = []byte("www..xyz.com")
+
 func CreateToken(id string, duration time.Duration) (error, string) {
 	expireTime := time.Now().Add(duration * time.Minute)
 	claims := model.TokenClaims{
@@ -17,7 +19,7 @@ func CreateToken(id string, duration time.Duration) (error, string) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(token)
+	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		return err, tokenString
 	}
