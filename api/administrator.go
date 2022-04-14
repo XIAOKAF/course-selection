@@ -36,7 +36,8 @@ func administratorLogin(ctx *gin.Context) {
 	}
 }
 
-func RememberStatus(ctx *gin.Context) {
+//记住登录状态
+func rememberStatus(ctx *gin.Context) {
 	administratorId := ctx.PostForm("administratorId")
 	auth := ctx.PostForm("auth")
 	if auth == "" {
@@ -60,7 +61,8 @@ func RememberStatus(ctx *gin.Context) {
 		return
 	}
 	//将token存到redis之中
-	err = service.Set(administratorId, token, 2)
+	//设置token此token在redis中的存活时间为5分钟(方便测试
+	err = service.Set(administratorId, token, 5)
 	if err != nil {
 		fmt.Println("存储token错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
@@ -69,6 +71,6 @@ func RememberStatus(ctx *gin.Context) {
 	//将token返回给前端
 	tool.Success(ctx, 200, token)
 	//中间件的形式检验并解析token
-	//若当前token已经过期但在最长保质期内，刷新token，用状态码提示前端token已经刷新
+	//若当前token已经过期但在最长保质期内，刷新token，用信息提示前端token已经刷新
 	//反之则用状态码提示token已经永久失效，需要重新登录
 }
