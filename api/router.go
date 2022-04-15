@@ -15,6 +15,12 @@ func InitEngine() {
 		administratorGroup.POST("/remember", rememberStatus)  //记住登录状态
 	}
 	//学生
+	engine.POST("/studentRegister", studentRegister) //学生注册（类似于学生第一天报道后激活官方账号
+	studentGroup := engine.Group("/student")
+	{
+		studentGroup.Use(parseToken)                    //解析token
+		studentGroup.POST("loginByVerifyCode", sendSms) //短信登录
+	}
 	//教师
 	engine.Run(":8080")
 }
