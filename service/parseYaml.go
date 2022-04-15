@@ -1,13 +1,14 @@
 package service
 
 import (
+	"course-selection/model"
 	"github.com/storyicon/grbac"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
 
-// ParseYaml 解析配置文件中的鉴权规则
-func ParseYaml() (grbac.Rules, error) {
+// ParseRule 解析配置文件中的鉴权规则
+func ParseRule() (grbac.Rules, error) {
 	var rules []*grbac.Rule
 
 	yamlFile, err := ioutil.ReadFile("ruleConfig.yaml")
@@ -67,4 +68,32 @@ func ParseYaml() (grbac.Rules, error) {
 	}
 
 	return rules, nil
+}
+
+// ParseSmsConfig 解析配置文件中的sms信息
+func ParseSmsConfig(sms model.Message) (model.Message, error) {
+	yamlFile, err := ioutil.ReadFile("smsConfig.yaml")
+	if err != nil {
+		return sms, err
+	}
+	configMap := make(map[string]interface{})
+	err = yaml.Unmarshal(yamlFile, configMap)
+	if err != nil {
+		return sms, err
+	}
+	SMSInterface := configMap["SMS"]
+	smsValue, ok := SMSInterface.(interface{})
+	if ok {
+		detailsValues, ok := smsValue.(map[interface{}]string)
+		if ok {
+			sms.SignId = detailsValues["secret_id"]
+			sms.SecretKey = detailsValues["secret_key"]
+			sms.AppId = detailsValues["app_id"]
+			sms.AppKey = detailsValues["app_key"]
+			sms.SignId = detailsValues["sign_id"]
+			sms.TemplateId = detailsValues["template_id"]
+			sms.Sign = detailsValues["sign"]
+		}
+	}
+	return sms, nil
 }
