@@ -12,10 +12,10 @@ func Set(key string, val string, expiration time.Duration) error {
 	return nil
 }
 
-func Get(key string) (error, string) {
+func Get(key string) (string, error) {
 	result, err := RDB.Get(key).Result()
 	if err != nil {
-		return err, result
+		return result, err
 	}
-	return nil, result
+	return result, nil
 }
