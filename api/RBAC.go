@@ -25,7 +25,7 @@ func Authorization(ctx *gin.Context) {
 	//通过权限等级获取权限（解析yaml文件中的权限配置
 	//判断角色是否有权限
 	//以一分钟的频率获取最新的身份
-	rbac, err := grbac.New(grbac.WithLoader(service.ParseYaml, time.Minute))
+	rbac, err := grbac.New(grbac.WithLoader(service.ParseRule, time.Minute))
 	if err != nil {
 		tool.Failure(ctx, 400, "你还没有这个权限哦")
 		log.Fatal("解析权限配置文件错误", err)
