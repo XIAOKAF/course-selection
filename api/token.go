@@ -28,7 +28,7 @@ func parseToken(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	err, flag, result := service.Get(tokenClaims.UserId)
+	result, flag, err := service.Get(tokenClaims.UserId)
 	if err != nil {
 		fmt.Println("从redis中获取token错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
