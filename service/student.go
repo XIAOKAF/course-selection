@@ -2,6 +2,7 @@ package service
 
 import (
 	"course-selection/dao"
+	"course-selection/model"
 	"github.com/go-redis/redis"
 )
 
@@ -14,4 +15,13 @@ func SelectStudentByUnifiedCode(unifiedCode string) (bool, error) {
 		return true, err
 	}
 	return true, nil
+}
+
+// UpdatePassword 更改用户密码
+func UpdatePassword(student model.Student) error {
+	err := dao.UpdatePassword(student)
+	if err != nil {
+		return err
+	}
+	return nil
 }
