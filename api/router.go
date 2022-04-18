@@ -7,6 +7,7 @@ import (
 func InitEngine() {
 	engine := gin.Default()
 	engine.Use(Authorization)
+	engine.POST("/checkSms", checkSms) //检验验证码是否正确
 	//高级管理员
 	administratorGroup := engine.Group("/administrator")
 	{

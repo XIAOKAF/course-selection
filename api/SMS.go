@@ -1,7 +1,6 @@
 package api
 
 import (
-	"course-selection/dao"
 	"course-selection/model"
 	"course-selection/service"
 	"course-selection/tool"
@@ -62,6 +61,36 @@ func sendSms(ctx *gin.Context) {
 		return
 	}
 	//将验证码存入redis之中并且设置过期时间(mobile:verifiedCode)
-	dao.Set(mobile, code, 2)
+	err = service.Set(mobile, code, 2)
+	if err != nil {
+		fmt.Println("储存验证码错误", err)
+		tool.Failure(ctx, 200, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "短信发送成功(p≧w≦q)")
+}
+
+//检查验证码是否正确且在保质期内
+func checkSms(ctx *gin.Context) {
+	mobile := ctx.PostForm("mobile")
+	verifyCode := ctx.PostForm("verifyCode")
+	result, duration, flag, err := service.CheckSms(mobile)
+	if err != nil {
+		fmt.Println("查询验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if !flag {
+		tool.Failure(ctx, 400, "电话号码错误")
+		return
+	}
+	if duration < 0 {
+		tool.Failure(ctx, 400, "验证码已过期")
+		return
+	}
+	if verifyCode != result {
+		tool.Failure(ctx, 400, "验证码错误")
+		return
+	}
+	tool.Failure(ctx, 200, "验证码正确")
 }
