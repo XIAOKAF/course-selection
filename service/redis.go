@@ -14,14 +14,14 @@ func Set(key string, val string, expiration time.Duration) error {
 	return nil
 }
 
-func Get(key string) (error, bool, string) {
-	err, result := dao.Get(key)
+func Get(key string) (string, bool, error) {
+	result, err := dao.Get(key)
 	if err != nil {
 		if err == redis.Nil {
 			//false表示未查询到该键，反之查询到
-			return nil, false, ""
+			return "", false, nil
 		}
-		return err, true, ""
+		return "", true, err
 	}
-	return nil, true, result
+	return result, true, err
 }
