@@ -19,3 +19,8 @@ func Get(key string) (string, error) {
 	}
 	return result, nil
 }
+
+func TTL(key string) (time.Duration, error) {
+	result := RDB.TTL(key)
+	return result.Result()
+}
