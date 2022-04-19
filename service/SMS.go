@@ -28,7 +28,7 @@ func SelectMobile(mobile string) (bool, error) {
 	return true, nil
 }
 
-func SenSms(mobile string, code string, sms model.Message) error {
+func SendSms(mobile string, code string, sms model.Message) error {
 	//连接
 	credential := common.NewCredential(sms.SignId, sms.SecretKey)
 	cpf := profile.NewClientProfile()
@@ -58,17 +58,27 @@ func SenSms(mobile string, code string, sms model.Message) error {
 	return nil
 }
 
-func CheckSms(mobile string) (string, time.Duration, bool, error) {
-	result, err := dao.Get(mobile)
+// CheckSms 查询验证码以及过期时间
+func CheckSms(mobile string) (string, time.Duration, error) {
+	code, err := dao.Get(mobile)
 	if err != nil {
-		if err == redis.Nil {
-			return result, -2, false, nil
-		}
-		return result, -2, true, err
+		return code, 0, err
 	}
 	duration, err := dao.TTL(mobile)
 	if err != nil {
-		return result, duration, true, err
+		return code, duration, err
 	}
-	return result, duration, true, nil
+	return code, duration, nil
+}
+
+// IsMobileExist 查询电话号码是否存在
+func IsMobileExist(mobile string) (bool, error) {
+	_, err := dao.Get(mobile)
+	if err != nil {
+		if err == redis.Nil {
+			return false, nil
+		}
+		return true, err
+	}
+	return true, nil
 }
