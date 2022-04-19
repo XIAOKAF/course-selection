@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 func studentRegister(ctx *gin.Context) {
@@ -256,4 +257,68 @@ func updateAvatar(ctx *gin.Context) {
 		return
 	}
 	tool.Success(ctx, 200, "头像更新成功")
+}
+
+//查询个人信息
+func selectInfo(ctx *gin.Context) {
+	//确认登录状态
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	_, flag, err := service.Get(tokenClaims.UserId)
+	if err != nil {
+		fmt.Println("查询统一验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if !flag {
+		tool.Failure(ctx, 400, "token不存在")
+		return
+	}
+
+	//从redis中获取具体的信息
+	studentName, err := service.HashGet(tokenClaims.UserId, "studentName")
+	tool.DealWithErr(ctx, err, "获取学生姓名错误")
+	gender, err := service.HashGet(tokenClaims.UserId, "gender")
+	tool.DealWithErr(ctx, err, "获取学生性别错误")
+	g, err := strconv.Atoi(gender)
+	tool.DealWithErr(ctx, err, "string转int错误")
+	grade, err := service.HashGet(tokenClaims.UserId, "grade")
+	tool.DealWithErr(ctx, err, "获取学生年级错误")
+	class, err := service.HashGet(tokenClaims.UserId, "class")
+	tool.DealWithErr(ctx, err, "获取学生班级错误")
+	department, err := service.HashGet(tokenClaims.UserId, "department")
+	tool.DealWithErr(ctx, err, "获取学生院系错误")
+	major, err := service.HashGet(tokenClaims.UserId, "major")
+	tool.DealWithErr(ctx, err, "获取学生专业错误")
+
+	//从腾讯云对象储存内获取头像
+	u, _ := url.Parse("https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com")
+	b := &cos.BaseURL{BucketURL: u}
+	client := cos.NewClient(b, &http.Client{
+		Transport: &cos.AuthorizationTransport{
+			SecretID:  " ",
+			SecretKey: " ",
+		},
+	})
+	file := "localfile"
+	opt := &cos.MultiDownloadOptions{
+		ThreadPoolSize: 5,
+	}
+	_, err = client.Object.Download(ctx, tokenClaims.UserId, file, opt)
+	tool.DealWithErr(ctx, err, "从腾讯云下载图片出错")
+
+	student := model.Student{
+		StudentName: studentName,
+		Gender:      g,
+		Grade:       grade,
+		Class:       class,
+		Department:  department,
+		Major:       major,
+	}
+	tool.Success(ctx, 200, student)
 }

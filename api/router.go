@@ -25,6 +25,7 @@ func InitEngine() {
 		studentGroup.POST("/updateMobile", updateMobile)             //更新电话号码
 		studentGroup.POST("/checkCodeForUpdate", checkCodeForUpdate) //更新电话号码时校验验证码
 		studentGroup.POST("/updateAvatar", updateAvatar)             //更新头像
+		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
 	}
 	//教师
 	engine.Run(":8080")
