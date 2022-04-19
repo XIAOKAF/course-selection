@@ -29,13 +29,15 @@ func studentRegister(ctx *gin.Context) {
 }
 
 func changePwdByOldPwd(ctx *gin.Context) {
-	unifiedCode := ctx.PostForm("unifiedCode")
-	oldPwd := ctx.PostForm("oldPwd")
-	newPwd := ctx.PostForm("newPwd")
-	if unifiedCode == "" {
-		tool.Failure(ctx, 400, "统一验证码不能为空哦")
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	oldPwd := ctx.PostForm("oldPwd")
+	newPwd := ctx.PostForm("newPwd")
 	if oldPwd == "" {
 		tool.Failure(ctx, 400, "密码不能为空哦，悄悄提醒你，初始验证码为姓名拼音哦")
 		return
@@ -44,7 +46,7 @@ func changePwdByOldPwd(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "你还要不要改密码了")
 		return
 	}
-	result, flag, err := service.Get(unifiedCode)
+	result, flag, err := service.Get(tokenClaims.UserId)
 	if err != nil {
 		fmt.Println("查询统一验证码错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
@@ -59,7 +61,7 @@ func changePwdByOldPwd(ctx *gin.Context) {
 		return
 	}
 	student := model.Student{
-		UnifiedCode: unifiedCode,
+		UnifiedCode: tokenClaims.UserId,
 		Password:    newPwd,
 	}
 	err = service.UpdatePassword(student)
@@ -69,4 +71,28 @@ func changePwdByOldPwd(ctx *gin.Context) {
 		return
 	}
 	tool.Success(ctx, 200, "成功♪(^∇^*)")
+}
+
+func updateMobile(ctx *gin.Context) {
+	unifiedCode := ctx.PostForm("unifiedCode")
+	oldMobile := ctx.PostForm("oldMobile")
+	newMobile := ctx.PostForm("newMobile")
+	if unifiedCode == "" {
+		tool.Failure(ctx, 400, "统一验证码不能为空哦")
+		return
+	}
+	if newMobile == "" {
+		tool.Failure(ctx, 400, "电话号码不能为空哦")
+		return
+	}
+	result, flag, err := service.Get(unifiedCode)
+	if err != nil {
+		fmt.Println("查询统一验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if !flag {
+		tool.Failure(ctx, 400, "该统一验证码不存在")
+		return
+	}
 }
