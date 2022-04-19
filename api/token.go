@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 var jwtKey = []byte("www..xyz.com")
@@ -28,9 +29,15 @@ func parseToken(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	result, flag, err := service.Get(tokenClaims.UserId)
+	claims, ok := token.Claims.(*model.TokenClaims)
+	if !ok {
+		tool.Failure(ctx, 500, "服务器错误")
+		log.Fatal("token解析失败")
+		return
+	}
+	result, flag, err := service.Get(claims.UserId)
 	if err != nil {
-		fmt.Println("从redis中获取token错误", err)
+		fmt.Println("从redis中查找token错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		ctx.Abort()
 		return
