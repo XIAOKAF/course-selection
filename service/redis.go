@@ -25,3 +25,29 @@ func Get(key string) (string, bool, error) {
 	}
 	return result, true, err
 }
+
+func Del(key string) error {
+	err := dao.Del(key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func HashSet(userId string, fieldName string, value string) error {
+	fields := make(map[string]interface{})
+	fields[fieldName] = value
+	err := dao.HashSet(userId, fields)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func HashGet(userId string, fieldName string) (string, error) {
+	value, err := dao.HashGet(userId, fieldName)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
