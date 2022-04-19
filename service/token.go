@@ -2,6 +2,7 @@ package service
 
 import (
 	"course-selection/model"
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
@@ -24,4 +25,19 @@ func CreateToken(id string, duration time.Duration) (error, string) {
 		return err, tokenString
 	}
 	return nil, tokenString
+}
+
+func ParseToken(tokenString string) (*model.TokenClaims, error) {
+	tokenClaims := &model.TokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, tokenClaims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		return tokenClaims, err
+	}
+	claims, ok := token.Claims.(*model.TokenClaims)
+	if !ok {
+		return claims, errors.New("token解析失败")
+	}
+	return claims, nil
 }
