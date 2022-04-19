@@ -25,3 +25,12 @@ func UpdatePassword(student model.Student) error {
 	}
 	return nil
 }
+
+// UpdateMobile 更新用户电话号码
+func UpdateMobile(student model.Student) error {
+	err := dao.UpdateMobile(student)
+	if err != nil {
+		return err
+	}
+	return nil
+}

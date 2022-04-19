@@ -8,6 +8,7 @@ type Student struct {
 	Grade       string
 	Class       string
 	Password    string
+	Mobile      string
 	Department  string
 	Major       string
 	Image       string

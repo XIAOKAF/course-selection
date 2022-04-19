@@ -19,9 +19,11 @@ func InitEngine() {
 	engine.POST("/studentRegister", studentRegister) //学生注册（类似于学生第一天报道后激活官方账号
 	studentGroup := engine.Group("/student")
 	{
-		studentGroup.Use(parseToken)                           //解析token
-		studentGroup.POST("loginByVerifyCode", sendSms)        //短信登录
-		studentGroup.POST("changePassword", changePwdByOldPwd) //通过旧密码修改密码
+		studentGroup.Use(parseToken)                                 //解析token
+		studentGroup.POST("/loginByVerifyCode", sendSms)             //短信登录
+		studentGroup.POST("/changePassword", changePwdByOldPwd)      //通过旧密码修改密码
+		studentGroup.POST("/updateMobile", updateMobile)             //更新电话号码
+		studentGroup.POST("/checkCodeForUpdate", checkCodeForUpdate) //更新电话号码时校验验证码
 	}
 	//教师
 	engine.Run(":8080")

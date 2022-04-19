@@ -15,3 +15,8 @@ func UpdatePassword(student model.Student) error {
 	result := DB.Model(&student).Where("unifiedCode = ?", student.UnifiedCode).Update("password", student.Password)
 	return result.Error
 }
+
+func UpdateMobile(student model.Student) error {
+	result := DB.Model(&student).Where("unifiedCode = ?", student.UnifiedCode).Update("mobile", student.Mobile)
+	return result.Error
+}
