@@ -6,6 +6,10 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/tencentyun/cos-go-sdk-v5"
+	"net/http"
+	"net/url"
+	"os"
 )
 
 func studentRegister(ctx *gin.Context) {
@@ -197,4 +201,59 @@ func checkCodeForUpdate(ctx *gin.Context) {
 		return
 	}
 	tool.Success(ctx, 200, "电话号码更新成功")
+}
+
+//更新头像
+func updateAvatar(ctx *gin.Context) {
+	//确认登录状态
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	_, flag, err := service.Get(tokenClaims.UserId)
+	if err != nil {
+		fmt.Println("查询统一验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if !flag {
+		tool.Failure(ctx, 400, "token不存在")
+		return
+	}
+	//获取头像文件
+	avatar, err := os.Open("avatar")
+	if err != nil {
+		fmt.Println("获取头像错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	u, err := url.Parse("https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com")
+	b := &cos.BaseURL{BatchURL: u}
+	client := cos.NewClient(b, &http.Client{
+		Transport: &cos.AuthorizationTransport{
+			SecretID:  " ",
+			SecretKey: " ",
+		},
+	})
+	opt := &cos.ObjectPutOptions{
+		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
+			ContentType: "ipj",
+		},
+	}
+	_, err = client.Object.Delete(ctx, tokenClaims.UserId)
+	if err != nil {
+		fmt.Println("删除原有头像错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	_, err = client.Object.Put(ctx, tokenClaims.UserId, avatar, opt)
+	if err != nil {
+		fmt.Println("储存头像错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	tool.Success(ctx, 200, "头像更新成功")
 }

@@ -24,6 +24,7 @@ func InitEngine() {
 		studentGroup.POST("/changePassword", changePwdByOldPwd)      //通过旧密码修改密码
 		studentGroup.POST("/updateMobile", updateMobile)             //更新电话号码
 		studentGroup.POST("/checkCodeForUpdate", checkCodeForUpdate) //更新电话号码时校验验证码
+		studentGroup.POST("/updateAvatar", updateAvatar)             //更新头像
 	}
 	//教师
 	engine.Run(":8080")
