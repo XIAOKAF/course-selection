@@ -59,3 +59,9 @@ func SetGet(setName string) (error, []string) {
 	result := RDB.SMembers(setName)
 	return result.Err(), result.Val()
 }
+
+// SScan 模糊搜索
+func SScan(key string, cursor uint64, match string, count int64) ([]string, uint64) {
+	result := RDB.SScan(key, cursor, match, count)
+	return result.Val()
+}

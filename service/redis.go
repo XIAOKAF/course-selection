@@ -66,3 +66,8 @@ func SetGet(setName string) (error, []string) {
 	err, members := dao.SetGet(setName)
 	return err, members
 }
+
+func SScan(key string, cursor uint64, match string, count int64) []string {
+	val, _ := dao.SScan(key, cursor, match, count)
+	return val
+}
