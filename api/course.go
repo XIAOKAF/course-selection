@@ -12,9 +12,12 @@ import (
 func insertCourse(ctx *gin.Context) {
 	courseNumber := ctx.PostForm("courseNumber")
 	//课程编号单独存入redis
-	err := service.SetAdd("course", courseNumber)
-	tool.DealWithErr(ctx, err, "插入课程编号出错")
+	err := service.SetAdd("courseNumber", courseNumber)
+	tool.DealWithErr(ctx, err, "储存课程编号出错")
 	courseName := ctx.PostForm("courseName")
+	//课程名称单独存入redis
+	err = service.SetAdd("courseName", courseName)
+	tool.DealWithErr(ctx, err, "储存课程名称出错")
 	courseDepartment := ctx.PostForm("courseDepartment")
 	courseCredit := ctx.PostForm("courseCredit")
 	courseType := ctx.PostForm("courseType")
@@ -73,4 +76,8 @@ func getAllCourse(ctx *gin.Context) {
 		courseDetailsArr = append(courseDetailsArr, courseDetails)
 	}
 	tool.Success(ctx, 200, courseDetailsArr)
+}
+
+func getSpecificCourse(ctx *gin.Context) {
+
 }
