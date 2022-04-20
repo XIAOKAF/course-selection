@@ -52,7 +52,17 @@ func HashGet(hashTableName string, fieldName string) (string, error) {
 	return value, nil
 }
 
+func HashGetAll(hashTableName string) (error, map[string]string) {
+	err, result := dao.HashGetAll(hashTableName)
+	return err, result
+}
+
 func SetAdd(key string, member interface{}) error {
 	err := dao.SetAdd(key, member)
 	return err
+}
+
+func SetGet(setName string) (error, []string) {
+	err, members := dao.SetGet(setName)
+	return err, members
 }

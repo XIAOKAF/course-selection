@@ -42,8 +42,20 @@ func HashGet(hashTableName, fieldsName string) (string, error) {
 	return result.Val(), result.Err()
 }
 
+// HashGetAll 获取哈希表中所有的值
+func HashGetAll(hashTableName string) (error, map[string]string) {
+	result := RDB.HGetAll(hashTableName)
+	return result.Err(), result.Val()
+}
+
 // SetAdd 像列表中插入数据
 func SetAdd(key string, member interface{}) error {
 	result := RDB.SAdd(key, member)
 	return result.Err()
+}
+
+// SetGet 从列表中获取数据
+func SetGet(setName string) (error, []string) {
+	result := RDB.SMembers(setName)
+	return result.Err(), result.Val()
 }
