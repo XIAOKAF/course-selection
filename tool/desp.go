@@ -26,6 +26,6 @@ func DealWithErr(ctx *gin.Context, err error, info string) {
 			"code": 500,
 			"info": "服务器错误",
 		})
+		ctx.Abort()
 	}
-	return
 }
