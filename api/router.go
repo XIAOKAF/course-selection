@@ -31,8 +31,9 @@ func InitEngine() {
 	//课程
 	courseGroup := engine.Group("/course")
 	{
-		courseGroup.POST("/insertCourse", insertCourse) //插入课程信息
-		courseGroup.GET("/getAllCourse", getAllCourse)  //获取所有课程详情
+		courseGroup.POST("/insertCourse", insertCourse)          //插入课程信息
+		courseGroup.GET("/getAllCourse", getAllCourse)           //获取所有课程详情
+		courseGroup.GET("/getSpecificCourse", getSpecificCourse) //模糊搜索
 	}
 	engine.Run(":8080")
 }

@@ -79,5 +79,8 @@ func getAllCourse(ctx *gin.Context) {
 }
 
 func getSpecificCourse(ctx *gin.Context) {
-
+	//模糊搜索
+	keyWords := ctx.PostForm("keyWords")
+	val := service.SScan("courseName", 0, "*"+keyWords+"*", 10)
+	tool.Success(ctx, 200, val)
 }
