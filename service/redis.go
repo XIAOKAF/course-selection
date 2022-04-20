@@ -34,18 +34,18 @@ func Del(key string) error {
 	return nil
 }
 
-func HashSet(userId string, fieldName string, value string) error {
+func HashSet(hashTableName, fieldName string, value string) error {
 	fields := make(map[string]interface{})
 	fields[fieldName] = value
-	err := dao.HashSet(userId, fields)
+	err := dao.HashSet(hashTableName, fields)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func HashGet(userId string, fieldName string) (string, error) {
-	value, err := dao.HashGet(userId, fieldName)
+func HashGet(hashTableName string, fieldName string) (string, error) {
+	value, err := dao.HashGet(hashTableName, fieldName)
 	if err != nil {
 		return value, err
 	}

@@ -31,13 +31,13 @@ func TTL(key string) (time.Duration, error) {
 }
 
 // HashSet 将用户信息以键值对的信息存入哈希表
-func HashSet(userId string, fields map[string]interface{}) error {
-	result := RDB.HMSet(userId, fields)
+func HashSet(hashTableName string, fields map[string]interface{}) error {
+	result := RDB.HMSet(hashTableName, fields)
 	return result.Err()
 }
 
 // HashGet 获取哈希表中指定的值
-func HashGet(userId string, fieldsName string) (string, error) {
-	result := RDB.HGet(userId, fieldsName)
+func HashGet(hashTableName, fieldsName string) (string, error) {
+	result := RDB.HGet(hashTableName, fieldsName)
 	return result.Val(), result.Err()
 }
