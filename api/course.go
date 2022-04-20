@@ -32,6 +32,9 @@ func insertCourse(ctx *gin.Context) {
 	}
 
 	courseNumber := ctx.PostForm("courseNumber")
+	//课程编号单独存入redis
+	err = service.SetAdd("course", courseNumber)
+	tool.DealWithErr(ctx, err, "插入课程编号出错")
 	courseName := ctx.PostForm("courseName")
 	courseDepartment := ctx.PostForm("courseDepartment")
 	courseCredit := ctx.PostForm("courseCredit")
