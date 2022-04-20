@@ -63,5 +63,12 @@ func insertCourse(ctx *gin.Context) {
 
 	//将课程信息放入MySQL
 	err = service.InsertCourse(course)
-	tool.DealWithErr(ctx, err, "插入课程信息错误")
+	tool.DealWithErr(ctx, err, "课程信息存入MySQL出错")
+	//将信息存入redis
+	err = service.RInsertCourse(course)
+	tool.DealWithErr(ctx, err, "课程信息存入redis出错")
+}
+
+func getCourseInfo(ctx *gin.Context) {
+
 }
