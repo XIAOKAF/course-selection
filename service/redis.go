@@ -51,3 +51,8 @@ func HashGet(hashTableName string, fieldName string) (string, error) {
 	}
 	return value, nil
 }
+
+func SetAdd(key string, member interface{}) error {
+	err := dao.SetAdd(key, member)
+	return err
+}

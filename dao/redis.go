@@ -41,3 +41,9 @@ func HashGet(hashTableName, fieldsName string) (string, error) {
 	result := RDB.HGet(hashTableName, fieldsName)
 	return result.Val(), result.Err()
 }
+
+// SetAdd 像列表中插入数据
+func SetAdd(key string, member interface{}) error {
+	result := RDB.SAdd(key, member)
+	return result.Err()
+}
