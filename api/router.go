@@ -28,5 +28,10 @@ func InitEngine() {
 		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
 	}
 	//教师
+	//课程
+	courseGroup := engine.Group("/course")
+	{
+		courseGroup.POST("/insertCourse", insertCourse) //插入课程信息
+	}
 	engine.Run(":8080")
 }
