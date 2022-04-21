@@ -137,21 +137,21 @@ func chooseCourse(ctx *gin.Context) {
 		return
 	}
 	//在redis课程编号集合里面查找该课程编号是否存在
-	err, flag := service.SIsMember("courseNumber", courseNumber)
+	err, flag := service.SIsMember("course", courseNumber)
 	tool.DealWithErr(ctx, err, "在redis中查询该课程编号出错")
 	if !flag {
 		tool.Failure(ctx, 400, "课程不存在")
 		return
 	}
+	//根据token中提供的学生统一验证码检索学生姓名
+	name, err := service.HashGet(tokenClaims.UserId, "studentName")
 	choice := model.Choice{
 		TeachingClass: teachingClass,
 		UnifiedCode:   tokenClaims.UserId,
+		StudentName:   name,
 	}
-	//将学生选课信息存入MySQL
-	err = service.ChooseCourse(choice)
-	tool.DealWithErr(ctx, err, "将选课信息存入MySQL出错")
 	//将学生选课信息存入redis
-	err = service.SetAdd(courseNumber+teachingClass, tokenClaims.UserId)
+	err = service.HashSet(choice.TeachingClass, choice.UnifiedCode, choice.StudentName)
 	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
 	tool.Success(ctx, 200, "选课成功")
 }
