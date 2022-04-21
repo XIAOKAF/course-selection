@@ -25,10 +25,6 @@ func createCurriculum(ctx *gin.Context) {
 		return
 	}
 
-	//将课程编号和课程姓名以键值对的形式存储到redis之中
-	err := service.HashSet("courseHash", courseNumber, courseName)
-	tool.DealWithErr(ctx, err, "将课程编号和课程名称存入redis错误")
-
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
 	//课程类型1表示选修，2表示必修
