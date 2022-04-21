@@ -191,7 +191,11 @@ func chooseCourse(ctx *gin.Context) {
 		StudentName:   name,
 	}
 	//将学生选课信息存入redis
+	//存入教学班编号为名的哈希表
 	err = service.HashSet(choice.TeachingClass, choice.UnifiedCode, choice.StudentName)
+	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	//存入以学生统一验证码+"teaching"为名的哈希表
+	err = service.HashSet(choice.UnifiedCode+"teaching", courseNumber, teachingClass)
 	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
 	tool.Success(ctx, 200, "选课成功")
 }
