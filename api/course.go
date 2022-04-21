@@ -33,6 +33,9 @@ func createCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "该课程已经存在了")
 		return
 	}
+	//将课程传入redis中的course集合
+	err = service.SetAdd("course", courseNumber)
+	tool.DealWithErr(ctx, err, "将课程编号储存到redis出错")
 
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
