@@ -9,31 +9,29 @@ import (
 )
 
 //插入新的课程信息
-func insertCourse(ctx *gin.Context) {
+func createCurriculum(ctx *gin.Context) {
 	courseNumber := ctx.PostForm("courseNumber")
-	//课程编号单独存入redis
-	err := service.SetAdd("courseNumber", courseNumber)
-	tool.DealWithErr(ctx, err, "储存课程编号出错")
 	courseName := ctx.PostForm("courseName")
-	//课程名称单独存入redis
-	err = service.SetAdd("courseName", courseName)
-	tool.DealWithErr(ctx, err, "储存课程名称出错")
 	courseDepartment := ctx.PostForm("courseDepartment")
 	courseCredit := ctx.PostForm("courseCredit")
 	courseType := ctx.PostForm("courseType")
-	teacher := ctx.PostForm("teacher")
 	teachingClass := ctx.PostForm("teachingClass")
 	courseGrade := ctx.PostForm("courseGrade")
-	setTime := ctx.PostForm("setTime")
 	duration := ctx.PostForm("duration")
 
-	if courseNumber == "" || courseName == "" || courseDepartment == "" || courseCredit == "" || courseType == "" || teacher == "" || teachingClass == "" || courseGrade == "" || setTime == "" || duration == "" {
+	//必要字段为空
+	if courseNumber == "" || courseName == "" || courseDepartment == "" || courseCredit == "" || courseType == "" || teachingClass == "" || courseGrade == "" || duration == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
 
+	//将课程编号和课程姓名以键值对的形式存储到redis之中
+	err := service.HashSet("courseHash", courseNumber, courseName)
+	tool.DealWithErr(ctx, err, "将课程编号和课程名称存入redis错误")
+
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
+	//课程类型1表示选修，2表示必修
 	classType, err := strconv.Atoi(courseType)
 	tool.DealWithErr(ctx, err, "课程类型string转int错误")
 	course := model.Course{
@@ -42,7 +40,6 @@ func insertCourse(ctx *gin.Context) {
 		CourseDepartment: courseDepartment,
 		CourseCredit:     classCredit,
 		CourseType:       classType,
-		SetTime:          setTime,
 		Duration:         duration,
 	}
 
@@ -71,7 +68,6 @@ func getAllCourse(ctx *gin.Context) {
 		classType, err := strconv.Atoi(result["courseType"])
 		tool.DealWithErr(ctx, err, "课程类型string转为int出错")
 		courseDetails.CourseType = classType
-		courseDetails.SetTime = result["setTime"]
 		courseDetails.Duration = result["duration"]
 		courseDetailsArr = append(courseDetailsArr, courseDetails)
 	}
