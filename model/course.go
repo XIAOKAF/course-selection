@@ -23,4 +23,5 @@ type Choice struct {
 	ChoiceId      int
 	TeachingClass string
 	UnifiedCode   string
+	StudentName   string
 }
