@@ -62,6 +62,16 @@ func HExists(hashTableName string, filedName string) (error, bool) {
 	return err, flag
 }
 
+func HKeys(hashTableName string) (error, []string) {
+	err, keys := dao.HKeys(hashTableName)
+	return err, keys
+}
+
+func HVals(hashTableName string) (error, []string) {
+	err, vals := dao.HVals(hashTableName)
+	return err, vals
+}
+
 func SetAdd(key string, member interface{}) error {
 	err := dao.SetAdd(key, member)
 	return err

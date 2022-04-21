@@ -54,6 +54,18 @@ func HExists(key string, filed string) (error, bool) {
 	return result.Err(), result.Val()
 }
 
+// HKeys 获取哈希表中所有字段
+func HKeys(key string) (error, []string) {
+	result := RDB.HKeys(key)
+	return result.Err(), result.Val()
+}
+
+// HVals 获取哈希表中所有值
+func HVals(key string) (error, []string) {
+	result := RDB.HVals(key)
+	return result.Err(), result.Val()
+}
+
 // SetAdd 像列表中插入数据
 func SetAdd(key string, member interface{}) error {
 	result := RDB.SAdd(key, member)
