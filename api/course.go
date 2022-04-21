@@ -52,8 +52,43 @@ func createCurriculum(ctx *gin.Context) {
 	err = service.CreateCourse(course)
 	tool.DealWithErr(ctx, err, "课程信息存入MySQL出错")
 	//将信息存入redis
-	err = service.RInsertCourse(course)
+	err = service.RCreateCourse(course)
 	tool.DealWithErr(ctx, err, "课程信息存入redis出错")
+}
+
+//插入课程教学班级、课程开设时间以及教授老师的信息
+//仅将数据插入redis
+func detailCurriculum(ctx *gin.Context) {
+	courseNumber := ctx.PostForm("courseNumber")
+	teachingClass := ctx.PostForm("teachingClass")
+	teacherNumber := ctx.PostForm("teacherNumber")
+	setTime := ctx.PostForm("setTime")
+	if courseNumber == "" || teachingClass == "" || teacherNumber == "" || setTime == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+	}
+	//在MySQL中查询该课程是否存在
+	flag, err := service.SelectCourse(courseNumber)
+	tool.DealWithErr(ctx, err, "从MySQL中查询课程编号出错")
+	if flag {
+		tool.Failure(ctx, 400, "该课程已经存在了")
+		return
+	}
+	//在MySQL中查询该教师是否存在
+	flag, err = service.SelectTeacher(teacherNumber)
+	tool.DealWithErr(ctx, err, "从MySQL中查询教师编号出错")
+	if !flag {
+		tool.Failure(ctx, 400, "教师不存在")
+		return
+	}
+	teaching := model.Teaching{
+		CourseNumber:  courseNumber,
+		TeachingClass: teachingClass,
+		SetTime:       setTime,
+	}
+	//将数据存入redis
+	err = service.RDetailsCourse(teaching)
+	tool.DealWithErr(ctx, err, "将教学信息存入redis出错")
+	tool.Success(ctx, 200, "教学信息设置成功")
 }
 
 func getAllCourse(ctx *gin.Context) {
