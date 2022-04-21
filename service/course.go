@@ -3,14 +3,14 @@ package service
 import (
 	"course-selection/dao"
 	"course-selection/model"
-	"database/sql"
+	"gorm.io/gorm"
 )
 
 // SelectCourse 查询课程是否已经存在
 func SelectCourse(courseNumber string) (bool, error) {
 	err := dao.SelectCourse(courseNumber)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
 		return true, err
