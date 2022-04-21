@@ -2,7 +2,13 @@ package dao
 
 import "course-selection/model"
 
-func InsertCourse(course model.Course) error {
+func SelectCourse(courseNumber string) error {
+	var courseName string
+	result := DB.Table("").Select("courseName").Scan(&courseName)
+	return result.Error
+}
+
+func CreateCourse(course model.Course) error {
 	result := DB.Select("courseNumber", "courseName", "courseDepartment", "courseCredit", "courseType", "courseGrade", "duration").Create(&course)
 	return result.Error
 }

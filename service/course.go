@@ -3,11 +3,24 @@ package service
 import (
 	"course-selection/dao"
 	"course-selection/model"
+	"database/sql"
 )
 
-// InsertCourse mysql插入新的课程信息
-func InsertCourse(course model.Course) error {
-	err := dao.InsertCourse(course)
+// SelectCourse 查询课程是否已经存在
+func SelectCourse(courseNumber string) (bool, error) {
+	err := dao.SelectCourse(courseNumber)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return true, err
+	}
+	return true, nil
+}
+
+// CreateCourse mysql插入新的课程信息
+func CreateCourse(course model.Course) error {
+	err := dao.CreateCourse(course)
 	return err
 }
 
@@ -18,7 +31,6 @@ func RInsertCourse(course model.Course) error {
 	courseMap["courseDepartment"] = course.CourseDepartment
 	courseMap["courseCredit"] = course.CourseCredit
 	courseMap["courseType"] = course.CourseType
-	courseMap["setTime"] = course.SetTime
 	courseMap["duration"] = course.Duration
 	err := dao.HashSet(course.CourseNumber, courseMap)
 	return err
