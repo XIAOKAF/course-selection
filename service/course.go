@@ -24,8 +24,8 @@ func CreateCourse(course model.Course) error {
 	return err
 }
 
-// RInsertCourse redis插入新的课程信息
-func RInsertCourse(course model.Course) error {
+// RCreateCourse redis插入新的课程信息
+func RCreateCourse(course model.Course) error {
 	courseMap := make(map[string]interface{})
 	courseMap["courseName"] = course.CourseName
 	courseMap["courseDepartment"] = course.CourseDepartment
