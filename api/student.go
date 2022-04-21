@@ -15,20 +15,20 @@ import (
 
 func studentRegister(ctx *gin.Context) {
 	unifiedCode := ctx.PostForm("unifiedCode")
-	if unifiedCode == "" {
-		tool.Failure(ctx, 400, "还没有输入统一验证码哦")
+	password := ctx.PostForm("password")
+	if unifiedCode == "" || password == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
 	//查询该学生是否是本校学生，是则返回true，不是则返回false
-	flag, err := service.SelectStudentByUnifiedCode(unifiedCode)
-	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 400, "服务器错误")
-		return
-	}
+	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
+	tool.DealWithErr(ctx, err, "查询统一验证码错误")
 	if !flag {
 		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
 		return
+	}
+	if pwd != password {
+		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
 	}
 	tool.Success(ctx, 200, "亲爱的"+unifiedCode+"，你已经成功激活账户啦！o(*￣▽￣*)ブ")
 }
@@ -321,4 +321,18 @@ func selectInfo(ctx *gin.Context) {
 		Major:       major,
 	}
 	tool.Success(ctx, 200, student)
+}
+
+func SelectPersonalCourse(ctx *gin.Context) {
+	//获取token以便后续查询
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	tool.DealWithErr(ctx, err, "解析token失败")
+	_, flag, err := service.Get(tokenClaims.UserId)
+	tool.DealWithErr(ctx, err, "从redis中查询统一验证码失败")
+	if !flag {
+		tool.Failure(ctx, 400, "token不存在")
+		return
+	}
+
 }
