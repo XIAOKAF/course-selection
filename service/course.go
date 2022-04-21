@@ -45,6 +45,19 @@ func RDetailsCourse(teaching model.Teaching) error {
 	return err
 }
 
+// IsRepeated 判断时间是否有重叠的部分
+func IsRepeated(selectArr, choice []string) bool {
+	//有时间冲突则返回true，反之false
+	for _, value := range selectArr {
+		for _, v := range choice {
+			if value == v {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func ChooseCourse(choice model.Choice) error {
 	err := dao.ChooseCourse(choice)
 	return err
