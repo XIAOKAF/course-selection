@@ -24,6 +24,15 @@ func createCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
+	//在MySQL查询该课程是否已经存在
+	//存在则不允许再创建
+	//课程存在返回true，反之则false
+	flag, err := service.SelectCourse(courseNumber)
+	tool.DealWithErr(ctx, err, "从MySQL中查询课程编号出错")
+	if flag {
+		tool.Failure(ctx, 400, "该课程已经存在了")
+		return
+	}
 
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
@@ -40,7 +49,7 @@ func createCurriculum(ctx *gin.Context) {
 	}
 
 	//将课程信息放入MySQL
-	err = service.InsertCourse(course)
+	err = service.CreateCourse(course)
 	tool.DealWithErr(ctx, err, "课程信息存入MySQL出错")
 	//将信息存入redis
 	err = service.RInsertCourse(course)
