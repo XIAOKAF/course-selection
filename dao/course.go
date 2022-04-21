@@ -4,7 +4,7 @@ import "course-selection/model"
 
 func SelectCourse(courseNumber string) error {
 	var courseName string
-	result := DB.Table("").Select("courseName").Scan(&courseName)
+	result := DB.Table("course").Select("courseName").Scan(&courseName)
 	return result.Error
 }
 
