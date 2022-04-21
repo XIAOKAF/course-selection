@@ -3,18 +3,18 @@ package service
 import (
 	"course-selection/dao"
 	"course-selection/model"
-	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 )
 
-func SelectStudentByUnifiedCode(unifiedCode string) (bool, error) {
-	err := dao.SelectStudentByUnifiedCode(unifiedCode)
+func SelectUnifiedCode(unifiedCode string) (bool, error, string) {
+	err, pwd := dao.SelectUnifiedCode(unifiedCode)
 	if err != nil {
-		if err == redis.Nil {
-			return false, nil
+		if err == gorm.ErrRecordNotFound {
+			return false, nil, pwd
 		}
-		return true, err
+		return true, err, pwd
 	}
-	return true, nil
+	return true, nil, pwd
 }
 
 // UpdatePassword 更改用户密码

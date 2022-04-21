@@ -2,12 +2,10 @@ package dao
 
 import "course-selection/model"
 
-func SelectStudentByUnifiedCode(unifiedCode string) error {
-	_, err := Get(unifiedCode)
-	if err != nil {
-		return err
-	}
-	return nil
+func SelectUnifiedCode(unifiedCode string) (error, string) {
+	var pwd string
+	result := DB.Select("student").Where("unifiedCode = ?", unifiedCode).Take(&pwd)
+	return result.Error, pwd
 }
 
 // UpdatePassword 修改密码
