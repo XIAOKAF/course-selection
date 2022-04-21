@@ -48,6 +48,12 @@ func HashGetAll(hashTableName string) (error, map[string]string) {
 	return result.Err(), result.Val()
 }
 
+// HExists 检索哈希表中是否存在指定字段
+func HExists(key string, filed string) (error, bool) {
+	result := RDB.HExists(key, filed)
+	return result.Err(), result.Val()
+}
+
 // SetAdd 像列表中插入数据
 func SetAdd(key string, member interface{}) error {
 	result := RDB.SAdd(key, member)

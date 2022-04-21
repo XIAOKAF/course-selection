@@ -57,6 +57,11 @@ func HashGetAll(hashTableName string) (error, map[string]string) {
 	return err, result
 }
 
+func HExists(hashTableName string, filedName string) (error, bool) {
+	err, flag := dao.HExists(hashTableName, filedName)
+	return err, flag
+}
+
 func SetAdd(key string, member interface{}) error {
 	err := dao.SetAdd(key, member)
 	return err
