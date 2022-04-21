@@ -36,6 +36,15 @@ func RCreateCourse(course model.Course) error {
 	return err
 }
 
+func RDetailsCourse(teaching model.Teaching) error {
+	teachingMap := make(map[string]interface{})
+	teachingMap["courseNumber"] = teaching.CourseNumber
+	teachingMap["setTime"] = teaching.SetTime
+	teachingMap["teacherNumber"] = teaching.TeacherNumber
+	err := dao.HashSet(teaching.TeachingClass, teachingMap)
+	return err
+}
+
 func ChooseCourse(choice model.Choice) error {
 	err := dao.ChooseCourse(choice)
 	return err
