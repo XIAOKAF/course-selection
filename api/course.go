@@ -84,3 +84,35 @@ func getSpecificCourse(ctx *gin.Context) {
 	val := service.SScan("courseName", 0, "*"+keyWords+"*", 10)
 	tool.Success(ctx, 200, val)
 }
+
+func chooseCourse(ctx *gin.Context) {
+	//中间件验证请求头是否携带token且token存在并合格
+	//从token中获取id方便后续插入数据的操作
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	tool.DealWithErr(ctx, err, "token解析出错")
+	courseNumber := ctx.PostForm("courseNumber")
+	teachingClass := ctx.PostForm("teachingClass")
+	if courseNumber == "" || teachingClass == "" {
+		tool.Failure(ctx, 400, "关键字段不能为空哦")
+		return
+	}
+	//在redis课程编号集合里面查找该课程编号是否存在
+	err, flag := service.SIsMember("courseNumber", courseNumber)
+	tool.DealWithErr(ctx, err, "在redis中查询该课程编号出错")
+	if !flag {
+		tool.Failure(ctx, 400, "课程不存在")
+		return
+	}
+	choice := model.Choice{
+		TeachingClass: teachingClass,
+		UnifiedCode:   tokenClaims.UserId,
+	}
+	//将学生选课信息存入MySQL
+	err = service.ChooseCourse(choice)
+	tool.DealWithErr(ctx, err, "将选课信息存入MySQL出错")
+	//将学生选课信息存入redis
+	err = service.SetAdd(courseNumber+teachingClass, tokenClaims.UserId)
+	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	tool.Success(ctx, 200, "选课成功")
+}

@@ -23,3 +23,8 @@ func RInsertCourse(course model.Course) error {
 	err := dao.HashSet(course.CourseNumber, courseMap)
 	return err
 }
+
+func ChooseCourse(choice model.Choice) error {
+	err := dao.ChooseCourse(choice)
+	return err
+}

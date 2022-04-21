@@ -13,3 +13,9 @@ type Course struct {
 	SetTime          string
 	Duration         string
 }
+
+type Choice struct {
+	ChoiceId      int
+	TeachingClass string
+	UnifiedCode   string
+}
