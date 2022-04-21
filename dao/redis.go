@@ -65,3 +65,9 @@ func SScan(key string, cursor uint64, match string, count int64) ([]string, uint
 	result := RDB.SScan(key, cursor, match, count)
 	return result.Val()
 }
+
+// SIsMember 判断给定member是否在集合里面
+func SIsMember(key string, members interface{}) (error, bool) {
+	result := RDB.SIsMember(key, members)
+	return result.Err(), result.Val()
+}

@@ -71,3 +71,8 @@ func SScan(key string, cursor uint64, match string, count int64) []string {
 	val, _ := dao.SScan(key, cursor, match, count)
 	return val
 }
+
+func SIsMember(key string, member interface{}) (error, bool) {
+	err, flag := dao.SIsMember(key, member)
+	return err, flag
+}
