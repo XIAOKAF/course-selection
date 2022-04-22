@@ -17,17 +17,6 @@ func CreateCode() string {
 	return code
 }
 
-func SelectMobile(mobile string) (bool, error) {
-	_, err := dao.Get(mobile)
-	if err != nil {
-		if err == redis.Nil {
-			return false, nil
-		}
-		return true, err
-	}
-	return true, nil
-}
-
 func SendSms(mobile string, code string, sms model.Message) error {
 	//连接
 	credential := common.NewCredential(sms.SignId, sms.SecretKey)
