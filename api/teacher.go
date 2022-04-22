@@ -9,6 +9,7 @@ import (
 func teacherLogin(ctx *gin.Context) {
 	workNumber := ctx.PostForm("workNumber")
 	password := ctx.PostForm("pwd")
+	auth := ctx.PostForm("auth")
 	if workNumber == "" || password == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
@@ -27,8 +28,16 @@ func teacherLogin(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "密码错误")
 		return
 	}
-	//记住登录状态（24h
-	err, token := service.CreateToken(workNumber, 2)
+	if auth == "" {
+		//记住登录状态（24h
+		err, token := service.CreateToken(workNumber, 2)
+		tool.DealWithErr(ctx, err, "创建token错误")
+		err = service.HashSet("token", workNumber, token)
+		tool.DealWithErr(ctx, err, "存储token错误")
+		tool.Success(ctx, 200, token)
+		return
+	}
+	err, token := service.RememberStatus(workNumber, 5)
 	tool.DealWithErr(ctx, err, "创建token错误")
 	err = service.HashSet("token", workNumber, token)
 	tool.DealWithErr(ctx, err, "存储token错误")
