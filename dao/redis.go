@@ -66,6 +66,17 @@ func HVals(key string) (error, []string) {
 	return result.Err(), result.Val()
 }
 
+// HDel 删除哈希表中的值
+func HDel(key string, fields []string) error {
+	for _, i := range fields {
+		result := RDB.HDel(key, i)
+		if result.Err() != nil {
+			return result.Err()
+		}
+	}
+	return nil
+}
+
 // SetAdd 像列表中插入数据
 func SetAdd(key string, member interface{}) error {
 	result := RDB.SAdd(key, member)

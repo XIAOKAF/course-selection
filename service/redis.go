@@ -46,10 +46,7 @@ func HashSet(hashTableName, fieldName string, value string) error {
 
 func HashGet(hashTableName string, fieldName string) (string, error) {
 	value, err := dao.HashGet(hashTableName, fieldName)
-	if err != nil {
-		return value, err
-	}
-	return value, nil
+	return value, err
 }
 
 func HashGetAll(hashTableName string) (error, map[string]string) {
@@ -70,6 +67,11 @@ func HKeys(hashTableName string) (error, []string) {
 func HVals(hashTableName string) (error, []string) {
 	err, vals := dao.HVals(hashTableName)
 	return err, vals
+}
+
+func HDel(hashTableName string, filedNameArr []string) error {
+	err := dao.HDel(hashTableName, filedNameArr)
+	return err
 }
 
 func SetAdd(key string, member interface{}) error {
