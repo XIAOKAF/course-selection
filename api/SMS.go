@@ -74,18 +74,22 @@ func sendSms(ctx *gin.Context) {
 func checkSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	verifyCode := ctx.PostForm("verifyCode")
-	result, duration, flag, err := service.CheckSms(mobile)
-	if err != nil {
-		fmt.Println("查询验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
+	result, duration, err := service.CheckSms(mobile)
+	if result == "" {
 		tool.Failure(ctx, 400, "电话号码错误")
 		return
 	}
-	if duration < 0 {
-		tool.Failure(ctx, 400, "验证码已过期")
+	tool.DealWithErr(ctx, err, "查询验证码错误")
+	if duration == -1 {
+		fmt.Println(ctx, "验证码没有设置过期时间")
+		//删除电话号码-验证码键值对
+		err = service.Del(mobile)
+		tool.DealWithErr(ctx, err, "删除电话号码验证码键值对出错")
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if duration == -2 {
+		tool.Failure(ctx, 400, "验证码过期")
 		return
 	}
 	if verifyCode != result {
