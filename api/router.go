@@ -13,6 +13,7 @@ func InitEngine() {
 	{
 		administratorGroup.Use(parseToken)                    //解析token
 		administratorGroup.POST("/login", administratorLogin) //管理员登录
+		administratorGroup.POST("/cancel", cancel)            //注销学生账号
 	}
 	//学生
 	engine.POST("/studentRegister", studentRegister) //学生注册（类似于学生第一天报道后激活官方账号
