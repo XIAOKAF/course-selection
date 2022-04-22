@@ -30,7 +30,9 @@ func InitEngine() {
 	//教师
 	teacherGroup := engine.Group("/teacher")
 	{
-		teacherGroup.POST("login", teacherLogin) //教师登录
+		teacherGroup.POST("/login", teacherLogin)                //教师登录
+		teacherGroup.GET("/getTeachingClass", getTeachingClass)  //获取所有教学班
+		teacherGroup.GET("/studentSelection", studentsSelection) //获取选择教学班的同学信息
 	}
 	//课程
 	courseGroup := engine.Group("/course")
