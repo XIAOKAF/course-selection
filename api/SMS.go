@@ -6,6 +6,7 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	tencentsms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
@@ -75,9 +76,11 @@ func checkSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	verifyCode := ctx.PostForm("verifyCode")
 	result, duration, err := service.CheckSms(mobile)
-	if result == "" {
-		tool.Failure(ctx, 400, "电话号码错误")
-		return
+	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "验证码已过期或电话号码错误")
+			return
+		}
 	}
 	tool.DealWithErr(ctx, err, "查询验证码错误")
 	if duration == -1 {
@@ -86,10 +89,6 @@ func checkSms(ctx *gin.Context) {
 		err = service.Del(mobile)
 		tool.DealWithErr(ctx, err, "删除电话号码验证码键值对出错")
 		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if duration == -2 {
-		tool.Failure(ctx, 400, "验证码过期")
 		return
 	}
 	if verifyCode != result {
