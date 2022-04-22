@@ -6,6 +6,7 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"net/http"
 	"net/url"
@@ -111,6 +112,12 @@ func changePwdByOldPwd(ctx *gin.Context) {
 }
 
 func updateMobile(ctx *gin.Context) {
+	//新电话号码
+	newMobile := ctx.PostForm("newMobile")
+	if newMobile == "" {
+		tool.Failure(ctx, 400, "电话号码不能为空哦")
+		return
+	}
 	//确认登录状态
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
@@ -119,21 +126,13 @@ func updateMobile(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	_, flag, err := service.Get(tokenClaims.UserId)
+	_, err = service.HashGet(tokenClaims.UserId, "studentName")
 	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "token不存在")
-		return
-	}
-	//新电话号码
-	newMobile := ctx.PostForm("newMobile")
-	if newMobile == "" {
-		tool.Failure(ctx, 400, "电话号码不能为空哦")
-		return
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "统一验证码不存在")
+			return
+		}
+		tool.DealWithErr(ctx, err, "查询统一验证码错误")
 	}
 	//发送校验短信
 	code := service.CreateCode()
@@ -151,12 +150,8 @@ func updateMobile(ctx *gin.Context) {
 		return
 	}
 	//将新电话号码存入redis之中
-	err = service.Set(newMobile, code, 2)
-	if err != nil {
-		fmt.Println("储存新电话号码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+	err = service.HashSet(tokenClaims.UserId, "mobile", newMobile)
+	tool.DealWithErr(ctx, err, "redis储存新电话号码错误")
 	tool.Success(ctx, 200, "成功发送短信")
 }
 
