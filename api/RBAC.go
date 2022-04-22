@@ -15,13 +15,9 @@ func Authorization(ctx *gin.Context) {
 	//获取用户账号
 	userNumber := ctx.PostForm("userNumber")
 	//获取角色权限等级
-	err, roleLevel := service.SelectRoleLevel(userNumber)
+	roleLevel, err := service.HashGet("role", userNumber)
+	tool.DealWithErr(ctx, err, "从redis中获取权限等级错误")
 	roles := strings.Fields(roleLevel)
-	if err != nil {
-		tool.Failure(ctx, 500, "服务器错误")
-		log.Fatal("查询用户等级错误", err)
-		return
-	}
 	//通过权限等级获取权限（解析yaml文件中的权限配置
 	//判断角色是否有权限
 	//以一分钟的频率获取最新的身份
@@ -41,5 +37,4 @@ func Authorization(ctx *gin.Context) {
 		tool.Failure(ctx, http.StatusUnauthorized, "未满十八岁🈲止访问")
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 	}
-
 }
