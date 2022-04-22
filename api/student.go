@@ -34,6 +34,39 @@ func studentRegister(ctx *gin.Context) {
 	tool.Success(ctx, 200, "亲爱的"+unifiedCode+"，你已经成功激活账户啦！o(*￣▽￣*)ブ")
 }
 
+func studentLogin(ctx *gin.Context) {
+	unifiedCode := ctx.PostForm("unifiedCode")
+	password := ctx.PostForm("pwd")
+	auth := ctx.PostForm("auth")
+	if unifiedCode == "" || password == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
+	tool.DealWithErr(ctx, err, "查询统一验证码错误")
+	if !flag {
+		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
+		return
+	}
+	if pwd != password {
+		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
+		return
+	}
+	if auth == "" {
+		err, token := service.CreateToken(unifiedCode, 2)
+		tool.DealWithErr(ctx, err, "创建token错误")
+		err = service.HashSet("token", unifiedCode, token)
+		tool.DealWithErr(ctx, err, "存储token错误")
+		tool.Success(ctx, 200, token)
+		return
+	}
+	err, token := service.RememberStatus(unifiedCode, 5)
+	tool.DealWithErr(ctx, err, "创建token错误")
+	err = service.HashSet("token", unifiedCode, token)
+	tool.DealWithErr(ctx, err, "存储token错误")
+	tool.Success(ctx, 200, token)
+}
+
 func changePwdByOldPwd(ctx *gin.Context) {
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
