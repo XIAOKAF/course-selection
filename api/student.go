@@ -78,22 +78,20 @@ func changePwdByOldPwd(ctx *gin.Context) {
 	oldPwd := ctx.PostForm("oldPwd")
 	newPwd := ctx.PostForm("newPwd")
 	if oldPwd == "" {
-		tool.Failure(ctx, 400, "密码不能为空哦，悄悄提醒你，初始验证码为姓名拼音哦")
+		tool.Failure(ctx, 400, "悄悄提醒你，初始验证码为姓名拼音哦")
 		return
 	}
 	if newPwd == "" {
-		tool.Failure(ctx, 400, "你还要不要改密码了")
+		tool.Failure(ctx, 400, "(・∀・新密码是？")
 		return
 	}
-	result, flag, err := service.Get(tokenClaims.UserId)
+	result, err := service.HashGet(tokenClaims.UserId, "password")
 	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "该统一验证码不存在")
-		return
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "该账号不存在哦")
+			return
+		}
+		tool.DealWithErr(ctx, err, "查询统一验证码以及对应密码错误")
 	}
 	if result != oldPwd {
 		tool.Failure(ctx, 400, "原来的密码不正确哦")
@@ -103,12 +101,12 @@ func changePwdByOldPwd(ctx *gin.Context) {
 		UnifiedCode: tokenClaims.UserId,
 		Password:    newPwd,
 	}
+	//MySQL更新
 	err = service.UpdatePassword(student)
-	if err != nil {
-		fmt.Println("跟新密码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+	tool.DealWithErr(ctx, err, "MySQL更新密码错误")
+	//redis更新
+	err = service.HashSet(tokenClaims.UserId, "password", newPwd)
+	tool.DealWithErr(ctx, err, "redis更新密码错误")
 	tool.Success(ctx, 200, "成功♪(^∇^*)")
 }
 
