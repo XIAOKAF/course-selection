@@ -11,11 +11,12 @@ import (
 //高级管理员登录
 func administratorLogin(ctx *gin.Context) {
 	administratorId := ctx.PostForm("administratorId")
+	password := ctx.PostForm("pwd")
+	auth := ctx.PostForm("auth")
 	if administratorId == "" {
 		tool.Failure(ctx, 400, "你冒充管理员啦！！！")
 		return
 	}
-	password := ctx.PostForm("password")
 	if password == "" {
 		tool.Failure(ctx, 400, "密码怎么是空的呀(((φ(◎ロ◎;)φ)))")
 		return
@@ -33,4 +34,17 @@ func administratorLogin(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "密码居然错了┭┮﹏┭┮")
 		return
 	}
+	if auth == "" {
+		err, token := service.CreateToken(administratorId, 2)
+		tool.DealWithErr(ctx, err, "创建token错误")
+		err = service.HashSet("token", administratorId, token)
+		tool.DealWithErr(ctx, err, "存储token错误")
+		tool.Success(ctx, 200, token)
+		return
+	}
+	err, token := service.RememberStatus(administratorId, 5)
+	tool.DealWithErr(ctx, err, "创建token错误")
+	err = service.HashSet("token", administratorId, token)
+	tool.DealWithErr(ctx, err, "存储token错误")
+	tool.Success(ctx, 200, token)
 }
