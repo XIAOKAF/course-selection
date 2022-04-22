@@ -9,6 +9,10 @@ import (
 
 var jwtKey = []byte("www..xyz.com")
 
+func RememberStatus(id string, duration time.Duration) (error, string) {
+	return CreateToken(id, duration)
+}
+
 func CreateToken(id string, duration time.Duration) (error, string) {
 	expireTime := time.Now().Add(duration * time.Minute)
 	claims := model.TokenClaims{
