@@ -29,6 +29,7 @@ func studentRegister(ctx *gin.Context) {
 	}
 	if pwd != password {
 		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
+		return
 	}
 	tool.Success(ctx, 200, "亲爱的"+unifiedCode+"，你已经成功激活账户啦！o(*￣▽￣*)ブ")
 }
