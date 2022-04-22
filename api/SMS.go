@@ -16,13 +16,9 @@ import (
 func sendSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	//查询电话号码是否存在
-	flag, err := service.SelectMobile(mobile)
-	if err != nil {
-		fmt.Println("查询电话号码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if flag {
+	flag, err := service.IsMobileExist(mobile)
+	tool.DealWithErr(ctx, err, "查询电话号码是否存在错误")
+	if !flag {
 		tool.Failure(ctx, 400, "电话号码不存在")
 		return
 	}
