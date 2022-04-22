@@ -28,6 +28,10 @@ func InitEngine() {
 		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
 	}
 	//教师
+	teacherGroup := engine.Group("/teacher")
+	{
+		teacherGroup.POST("login", teacherLogin) //教师登录
+	}
 	//课程
 	courseGroup := engine.Group("/course")
 	{
