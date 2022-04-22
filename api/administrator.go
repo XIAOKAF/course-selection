@@ -6,6 +6,8 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
+	"net/http"
 )
 
 //高级管理员登录
@@ -47,4 +49,27 @@ func administratorLogin(ctx *gin.Context) {
 	err = service.HashSet("token", administratorId, token)
 	tool.DealWithErr(ctx, err, "存储token错误")
 	tool.Success(ctx, 200, token)
+}
+
+func cancel(ctx *gin.Context) {
+	unifiedCode := ctx.PostForm("unifiedCode")
+	if unifiedCode == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	//查询该学生是否存在
+	_, err := service.HashGet(unifiedCode, "studentName")
+	if err == redis.Nil {
+		tool.Failure(ctx, 400, "该学生不存在")
+		return
+	}
+	//删除MySQL中的信息
+	err = service.Cancel(unifiedCode)
+	tool.DealWithErr(ctx, err, "删除MySQL中的学生信息错误")
+	//删除redis中的信息
+	err, keysArr := service.HKeys(unifiedCode)
+	tool.DealWithErr(ctx, err, "查询学生信息出错")
+	err = service.HDel(unifiedCode, keysArr)
+	tool.DealWithErr(ctx, err, "删除redis中的学生信息错误")
+	tool.Success(ctx, http.StatusOK, "已经将该学生删除")
 }

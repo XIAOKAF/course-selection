@@ -12,3 +12,8 @@ func AdministratorLogin(administrator model.Administrator) (error, string) {
 	}
 	return nil, password
 }
+
+func Cancel(unifiedCode string) error {
+	err := dao.Cancel(unifiedCode)
+	return err
+}

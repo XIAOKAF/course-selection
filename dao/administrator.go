@@ -9,3 +9,9 @@ func AdministratorLogin(administrator model.Administrator) (error, string) {
 	}
 	return nil, administrator.Password
 }
+
+func Cancel(unifiedCode string) error {
+	var student model.Student
+	result := DB.Where("unifiedCode = ?", unifiedCode).Delete(&student)
+	return result.Error
+}
