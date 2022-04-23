@@ -335,3 +335,24 @@ func selection(ctx *gin.Context) {
 	}
 	tool.Success(ctx, http.StatusOK, teachingSum)
 }
+
+func quit(ctx *gin.Context) {
+	//解析token获取id
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	classNumber := ctx.PostForm("classNumber")
+	if classNumber == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	var filedName []string
+	filedName = append(filedName, tokenClaims.UserId)
+	err = service.HDel(classNumber, filedName)
+	tool.DealWithErr(ctx, err, "删除教学班内的学生信息失败")
+	tool.Success(ctx, 200, "你已经退出该班级")
+}

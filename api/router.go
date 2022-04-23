@@ -36,6 +36,7 @@ func InitEngine() {
 		studentGroup.POST("/updateAvatar", updateAvatar)             //更新头像
 		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
 		studentGroup.GET("/selection", selection)                    //学生查询自己的选课信息
+		studentGroup.POST("/quit", quit)                             //学生退出班级
 	}
 
 	//教师接口
