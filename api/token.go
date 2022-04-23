@@ -4,9 +4,9 @@ import (
 	"course-selection/model"
 	"course-selection/service"
 	"course-selection/tool"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"log"
 )
 
@@ -16,54 +16,61 @@ func parseToken(ctx *gin.Context) {
 	tokenClaims := &model.TokenClaims{}
 	tokenString := ctx.Request.Header.Get("token")
 	if tokenString == "" {
-		tool.Success(ctx, 200, "先登录哦")
+		tool.Failure(ctx, 200, "请先登录")
 		ctx.Abort()
 		return
 	}
 	token, err := jwt.ParseWithClaims(tokenString, tokenClaims, func(token *jwt.Token) (i interface{}, err error) {
 		return jwtKey, nil
 	})
-	if err != nil {
-		fmt.Println("解析token错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		ctx.Abort()
-		return
-	}
+	tool.DealWithErr(ctx, err, "解析token错误")
 	claims, ok := token.Claims.(*model.TokenClaims)
 	if !ok {
 		tool.Failure(ctx, 500, "服务器错误")
 		log.Fatal("token解析失败")
 		return
 	}
-	result, flag, err := service.Get(claims.UserId)
-	if err != nil {
-		fmt.Println("从redis中查找token错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		ctx.Abort()
-		return
-	}
-	//未查询到请求头中携带的token所对应的用户id
-	if !flag {
-		tool.Failure(ctx, 400, "token已经永久过期，请重新登录")
-		ctx.Abort()
-		return
-	}
-	//请求头中携带的token与在redis中查询到的token不一致
+	result, err := service.HashGet("token", claims.UserId)
+	tool.DealWithErr(ctx, err, "查询token出错")
 	if result != tokenString {
 		tool.Failure(ctx, 400, "token错误")
-		ctx.Abort()
 		return
 	}
-	//token已经过期，但是在redis之中还可以查询到该键值，证明可以进行刷新token的操作
+
+	//token已经过期
 	if !token.Valid {
-		err, newToken := service.CreateToken(tokenClaims.UserId, 2)
+		//删除redis中的token
+		var filedName []string
+		filedName = append(filedName, claims.UserId)
+		err := service.HDel("token", filedName)
+		tool.DealWithErr(ctx, err, "删除token出错")
+		//查询refreshToken
+		result, err := service.HashGet("refreshToken", claims.UserId)
 		if err != nil {
-			fmt.Println("刷新token错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
+			if err == redis.Nil {
+				tool.Failure(ctx, 400, "token已经失效")
+				return
+			}
+			tool.DealWithErr(ctx, err, "查询refreshToken出错")
 		}
-		tool.Success(ctx, 200, "你的新token是:"+newToken)
-		return
+		//解析refreshToken
+		token, err := jwt.ParseWithClaims(result, tokenClaims, func(token *jwt.Token) (i interface{}, err error) {
+			return jwtKey, nil
+		})
+		//refreshToken过期
+		if !token.Valid {
+			//删除refreshToken
+			var refreshToken []string
+			refreshToken = append(refreshToken, result)
+			err := service.HDel("refreshToken", refreshToken)
+			tool.DealWithErr(ctx, err, "删除refreshToken出错")
+			tool.Failure(ctx, 400, "请先登录")
+		}
+		//创建新的token
+		err, newToken := service.CreateToken(claims.UserId, 2)
+		tool.DealWithErr(ctx, err, "创建token出错")
+		tool.Success(ctx, 200, newToken)
 	}
+
 	tool.Success(ctx, 200, tokenClaims.UserId+"你好")
 }
