@@ -41,7 +41,7 @@ func ParseRule() (grbac.Rules, error) {
 		resourceMap, ok1 := roleValue.(map[interface{}]string)
 		permissionMap, ok2 := roleValue.(map[interface{}][]string)
 		if ok1 && ok2 {
-			rules[1].ID = 0
+			rules[1].ID = 1
 			rules[1].Host = resourceMap["host"]
 			rules[1].Path = resourceMap["path"]
 			rules[1].Method = resourceMap["method"]
@@ -51,13 +51,13 @@ func ParseRule() (grbac.Rules, error) {
 		}
 	}
 
-	roleInterface = configMap["role0"]
+	roleInterface = configMap["role2"]
 	roleValue, ok = roleInterface.(interface{})
 	if ok {
 		resourceMap, ok1 := roleValue.(map[interface{}]string)
 		permissionMap, ok2 := roleValue.(map[interface{}][]string)
 		if ok1 && ok2 {
-			rules[2].ID = 0
+			rules[2].ID = 2
 			rules[2].Host = resourceMap["host"]
 			rules[2].Path = resourceMap["path"]
 			rules[2].Method = resourceMap["method"]
