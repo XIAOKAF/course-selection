@@ -149,7 +149,9 @@ func updateMobile(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	//将新电话号码存入redis之中
+	//MySQL更新
+
+	//redis更新
 	err = service.HashSet(tokenClaims.UserId, "mobile", newMobile)
 	tool.DealWithErr(ctx, err, "redis储存新电话号码错误")
 	tool.Success(ctx, 200, "成功发送短信")
