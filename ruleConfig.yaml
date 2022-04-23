@@ -4,11 +4,13 @@ role0:
   id: 0
   #Resource
   host: "*"
-  path: "/*/*"
+  path: "/[Ssc]*"
   method: "{POST,GET}"
   #Permission
   authorized_roles:
-    - "*"
+    - student
+    - teacher
+    - administrator
   forbidden_roles:
     - visitor
   allow_anyone: false
@@ -18,7 +20,7 @@ role1:
   id: 1
   #Resource
   host: teacher.com
-  path: "/*/*"
+  path: "/[St]"
   method: "*"
   #Permission
   authorized_roles:
@@ -34,7 +36,7 @@ role2:
   id: 2
   #Resource
   host: administrator.com
-  path: "/*/*"
+  path: "/[aS]"
   method: "*"
   #Permission
   authorized_roles:
