@@ -214,16 +214,6 @@ func updateAvatar(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	_, flag, err := service.Get(tokenClaims.UserId)
-	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "token不存在")
-		return
-	}
 	//获取头像文件
 	avatar, err := os.Open("avatar")
 	if err != nil {
