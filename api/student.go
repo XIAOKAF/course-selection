@@ -302,3 +302,36 @@ func selectInfo(ctx *gin.Context) {
 	}
 	tool.Success(ctx, 200, student)
 }
+
+func selection(ctx *gin.Context) {
+	//解析token获取id
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err, courseNumberArr := service.HKeys(tokenClaims.UserId + "teaching")
+	tool.DealWithErr(ctx, err, "查询课程编号失败")
+	err, classNumberArr := service.HVals(tokenClaims.UserId + "teaching")
+	tool.DealWithErr(ctx, err, "查询教学班失败")
+	teaching := model.Selection{}
+	var teachingSum []model.Selection
+	for i, v := range courseNumberArr {
+		teaching.CourseNumber = v
+		teaching.TeachingClass = classNumberArr[i]
+		teaching.CourseCredit, err = service.HashGet(tokenClaims.UserId, "courseCredit")
+		tool.DealWithErr(ctx, err, "查询课程学分错误")
+		teaching.CourseType, err = service.HashGet(tokenClaims.UserId, "courseType")
+		tool.DealWithErr(ctx, err, "查询课程类型错误")
+		teaching.SetTime, err = service.HashGet(v+"teaching", classNumberArr[i])
+		tool.DealWithErr(ctx, err, "查询教学班开设时间错误")
+		teacherNumber, err := service.HashGet(v+"teacher", classNumberArr[i])
+		tool.DealWithErr(ctx, err, "查询教师编号错误")
+		teaching.TeacherName, err = service.HashGet(teacherNumber, "teacherName")
+		tool.DealWithErr(ctx, err, "查询教师姓名错误")
+		teachingSum[i] = teaching
+	}
+	tool.Success(ctx, http.StatusOK, teachingSum)
+}

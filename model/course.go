@@ -25,3 +25,12 @@ type Choice struct {
 	UnifiedCode   string
 	StudentName   string
 }
+
+type Selection struct {
+	CourseNumber  string
+	TeachingClass string
+	TeacherName   string
+	SetTime       string
+	CourseCredit  string
+	CourseType    string
+}
