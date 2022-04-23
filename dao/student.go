@@ -2,6 +2,11 @@ package dao
 
 import "course-selection/model"
 
+func SpiderMan(student model.Student) error {
+	result := DB.Select("unifiedCode", "studentName", "gender", "grade", "class", "password", "department", "major", "ruleId").Create(&student)
+	return result.Error
+}
+
 func SelectUnifiedCode(unifiedCode string) (error, string) {
 	var pwd string
 	result := DB.Select("student").Where("unifiedCode = ?", unifiedCode).Take(&pwd)

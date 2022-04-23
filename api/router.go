@@ -20,10 +20,11 @@ func InitEngine() {
 	}
 
 	//管理员接口
+	engine.POST("/administratorLogin", administratorLogin) //管理员登录
 	administratorGroup := engine.Group("/administrator")
 	{
 		administratorGroup.Use(parseToken)                         //解析token
-		administratorGroup.POST("/login", administratorLogin)      //管理员登录
+		administratorGroup.POST("/spiderMan", spiderMan)           //导入学生信息
 		administratorGroup.POST("/insertCourse", createCurriculum) //开设新的课程
 		administratorGroup.POST("/detailCourse", detailCurriculum) //开设教学班
 		administratorGroup.POST("/cancel", cancel)                 //注销学生账号

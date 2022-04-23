@@ -6,6 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
+func SpiderMan(student model.Student) error {
+	return dao.SpiderMan(student)
+}
+
 func SelectUnifiedCode(unifiedCode string) (bool, error, string) {
 	err, pwd := dao.SelectUnifiedCode(unifiedCode)
 	if err != nil {
