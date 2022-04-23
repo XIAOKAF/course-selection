@@ -149,11 +149,9 @@ func updateMobile(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	//MySQL更新
-
-	//redis更新
-	err = service.HashSet(tokenClaims.UserId, "mobile", newMobile)
-	tool.DealWithErr(ctx, err, "redis储存新电话号码错误")
+	//redis存储
+	err = service.Set(tokenClaims.UserId, code, 2)
+	tool.DealWithErr(ctx, err, "redis储存验证码错误")
 	tool.Success(ctx, 200, "成功发送短信")
 }
 
@@ -162,43 +160,24 @@ func checkCodeForUpdate(ctx *gin.Context) {
 	//确认登录状态
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
-	if err != nil {
-		fmt.Println("token解析失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	_, flag, err := service.Get(tokenClaims.UserId)
-	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "token不存在")
-		return
-	}
+	tool.DealWithErr(ctx, err, "解析token出错")
 	newMobile := ctx.PostForm("newMobile")
 	code := ctx.PostForm("code")
-	//查询新电话号码是否正确
-	flag, err = service.IsMobileExist(newMobile)
-	if err != nil {
-		fmt.Println("查询新电话号码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "电话号码错误")
-		return
-	}
 	//验证码是否正确且在保质期内
-	result, time, err := service.CheckSms(newMobile)
+	result, duration, err := service.CheckSms(newMobile)
 	if err != nil {
-		fmt.Println("查询验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "验证码已过期或电话号码错误")
+			return
+		}
 	}
-	if time < 0 {
-		tool.Failure(ctx, 400, "验证码已过期")
+	tool.DealWithErr(ctx, err, "查询验证码错误")
+	if duration == -1 {
+		fmt.Println(ctx, "验证码没有设置过期时间")
+		//删除电话号码-验证码键值对
+		err = service.Del(newMobile)
+		tool.DealWithErr(ctx, err, "删除电话号码验证码键值对出错")
+		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
 	if code != result {
@@ -211,11 +190,7 @@ func checkCodeForUpdate(ctx *gin.Context) {
 		Mobile:      newMobile,
 	}
 	err = service.UpdateMobile(student)
-	if err != nil {
-		fmt.Println("MySQL更新电话号码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+	tool.DealWithErr(ctx, err, "MySQL更新出错")
 	//更新redis
 	err = service.HashSet(tokenClaims.UserId, "mobile", newMobile)
 	if err != nil {
@@ -225,11 +200,7 @@ func checkCodeForUpdate(ctx *gin.Context) {
 	}
 	//删除新电话号码-验证码键值对
 	err = service.Del(newMobile)
-	if err != nil {
-		fmt.Println("删除新电话号码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+	tool.DealWithErr(ctx, err, "redis删除验证码出错")
 	tool.Success(ctx, 200, "电话号码更新成功")
 }
 
