@@ -25,18 +25,15 @@ func createCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	//在MySQL查询该课程是否已经存在
+	//在redis中查询该课程是否已经存在
 	//存在则不允许再创建
 	//课程存在返回true，反之则false
-	flag, err := service.SelectCourse(courseNumber)
-	tool.DealWithErr(ctx, err, "从MySQL中查询课程编号出错")
+	err, flag := service.SIsMember("course", courseNumber)
+	tool.DealWithErr(ctx, err, "查询课程编号是否存在失败")
 	if flag {
-		tool.Failure(ctx, 400, "该课程已经存在了")
+		tool.Failure(ctx, 400, "该课程已经存在")
 		return
 	}
-	//将课程传入redis中的course集合
-	err = service.SetAdd("course", courseNumber)
-	tool.DealWithErr(ctx, err, "将课程编号储存到redis出错")
 
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
@@ -60,7 +57,7 @@ func createCurriculum(ctx *gin.Context) {
 	tool.DealWithErr(ctx, err, "课程信息存入redis出错")
 }
 
-//插入课程教学班级、课程开设时间以及教授老师的信息
+//开设教学班
 //仅将数据插入redis
 func detailCurriculum(ctx *gin.Context) {
 	courseNumber := ctx.PostForm("courseNumber")
@@ -71,7 +68,7 @@ func detailCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 	}
 	//在MySQL中查询该课程是否存在
-	flag, err := service.SelectCourse(courseNumber)
+	err, flag := service.SelectCourse(courseNumber)
 	tool.DealWithErr(ctx, err, "从MySQL中查询课程编号出错")
 	if flag {
 		tool.Failure(ctx, 400, "该课程已经存在了")
@@ -95,6 +92,7 @@ func detailCurriculum(ctx *gin.Context) {
 	tool.Success(ctx, 200, "教学信息设置成功")
 }
 
+//展示所有的课程信息
 func getAllCourse(ctx *gin.Context) {
 	err, members := service.SetGet("course")
 	tool.DealWithErr(ctx, err, "从redis中获取课程编号错误")
@@ -118,6 +116,7 @@ func getAllCourse(ctx *gin.Context) {
 	tool.Success(ctx, 200, courseDetailsArr)
 }
 
+//模糊搜索课程
 func getSpecificCourse(ctx *gin.Context) {
 	//模糊搜索
 	keyWords := ctx.PostForm("keyWords")
@@ -125,6 +124,7 @@ func getSpecificCourse(ctx *gin.Context) {
 	tool.Success(ctx, 200, val)
 }
 
+//选课
 func chooseCourse(ctx *gin.Context) {
 	//中间件验证请求头是否携带token且token存在并合格
 	//从token中获取id方便后续插入数据的操作

@@ -48,6 +48,7 @@ func teacherLogin(ctx *gin.Context) {
 	tool.Success(ctx, 200, token)
 }
 
+//获取老师所带的教学班
 func getTeachingClass(ctx *gin.Context) {
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
@@ -72,6 +73,7 @@ func getTeachingClass(ctx *gin.Context) {
 	tool.Success(ctx, http.StatusOK, teachingArr)
 }
 
+//获取选课学生信息
 func studentsSelection(ctx *gin.Context) {
 	tokenString := ctx.Request.Header.Get("token")
 	teachingClass := ctx.PostForm("teachingClass")

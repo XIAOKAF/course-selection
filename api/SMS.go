@@ -67,7 +67,7 @@ func sendSms(ctx *gin.Context) {
 	tool.Success(ctx, 200, "短信发送成功(p≧w≦q)")
 }
 
-//检查验证码是否正确且在保质期内
+//校验验证码
 func checkSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	verifyCode := ctx.PostForm("verifyCode")

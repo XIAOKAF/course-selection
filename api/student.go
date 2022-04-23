@@ -68,6 +68,7 @@ func studentLogin(ctx *gin.Context) {
 	tool.Success(ctx, 200, token)
 }
 
+//通过原密码修改密码
 func changePwdByOldPwd(ctx *gin.Context) {
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
@@ -303,6 +304,7 @@ func selectInfo(ctx *gin.Context) {
 	tool.Success(ctx, 200, student)
 }
 
+//查询个人选课信息
 func selection(ctx *gin.Context) {
 	//解析token获取id
 	tokenString := ctx.Request.Header.Get("token")
@@ -336,6 +338,7 @@ func selection(ctx *gin.Context) {
 	tool.Success(ctx, http.StatusOK, teachingSum)
 }
 
+//退课
 func quit(ctx *gin.Context) {
 	//解析token获取id
 	tokenString := ctx.Request.Header.Get("token")

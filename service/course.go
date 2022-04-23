@@ -3,19 +3,11 @@ package service
 import (
 	"course-selection/dao"
 	"course-selection/model"
-	"gorm.io/gorm"
 )
 
 // SelectCourse 查询课程是否已经存在
-func SelectCourse(courseNumber string) (bool, error) {
-	err := dao.SelectCourse(courseNumber)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return false, nil
-		}
-		return true, err
-	}
-	return true, nil
+func SelectCourse(courseNumber string) (error, bool) {
+	return dao.SIsMember("course", courseNumber)
 }
 
 // CreateCourse mysql插入新的课程信息

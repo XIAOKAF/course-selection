@@ -51,6 +51,7 @@ func administratorLogin(ctx *gin.Context) {
 	tool.Success(ctx, 200, token)
 }
 
+//注销学生账号
 func cancel(ctx *gin.Context) {
 	unifiedCode := ctx.PostForm("unifiedCode")
 	if unifiedCode == "" {
