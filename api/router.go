@@ -7,6 +7,9 @@ import (
 func InitEngine() {
 	engine := gin.Default()
 
+	//跨域
+	engine.Use(Cors)
+	//鉴权
 	engine.Use(Authorization)
 
 	//短信接口
@@ -56,5 +59,6 @@ func InitEngine() {
 		courseGroup.GET("/getSpecificCourse", getSpecificCourse) //模糊搜索
 		courseGroup.POST("/chooseCourse", chooseCourse)          //选课
 	}
+
 	engine.Run(":8080")
 }
