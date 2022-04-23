@@ -259,16 +259,6 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	_, flag, err := service.Get(tokenClaims.UserId)
-	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if !flag {
-		tool.Failure(ctx, 400, "token不存在")
-		return
-	}
 
 	//从redis中获取具体的信息
 	studentName, err := service.HashGet(tokenClaims.UserId, "studentName")
@@ -311,18 +301,4 @@ func selectInfo(ctx *gin.Context) {
 		Major:       major,
 	}
 	tool.Success(ctx, 200, student)
-}
-
-func SelectPersonalCourse(ctx *gin.Context) {
-	//获取token以便后续查询
-	tokenString := ctx.Request.Header.Get("token")
-	tokenClaims, err := service.ParseToken(tokenString)
-	tool.DealWithErr(ctx, err, "解析token失败")
-	_, flag, err := service.Get(tokenClaims.UserId)
-	tool.DealWithErr(ctx, err, "从redis中查询统一验证码失败")
-	if !flag {
-		tool.Failure(ctx, 400, "token不存在")
-		return
-	}
-
 }
