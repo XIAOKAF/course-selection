@@ -23,11 +23,11 @@ func InitEngine() {
 	engine.POST("/administratorLogin", administratorLogin) //管理员登录
 	administratorGroup := engine.Group("/administrator")
 	{
-		administratorGroup.Use(parseToken)                         //解析token
-		administratorGroup.POST("/spiderMan", spiderMan)           //导入学生信息
-		administratorGroup.POST("/insertCourse", createCurriculum) //开设新的课程
-		administratorGroup.POST("/detailCourse", detailCurriculum) //开设教学班
-		administratorGroup.POST("/cancel", cancel)                 //注销学生账号
+		administratorGroup.Use(parseToken)                             //解析token
+		administratorGroup.POST("/spiderMan", spiderMan)               //导入学生信息
+		administratorGroup.POST("/createCurriculum", createCurriculum) //开设新的课程
+		administratorGroup.POST("/detailCurriculum", detailCurriculum) //开设教学班
+		administratorGroup.POST("/cancel", cancel)                     //注销学生账号
 	}
 
 	//学生接口
@@ -41,6 +41,7 @@ func InitEngine() {
 		studentGroup.POST("/checkCodeForUpdate", checkCodeForUpdate) //更新电话号码时校验验证码
 		studentGroup.POST("/updateAvatar", updateAvatar)             //更新头像
 		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
+		studentGroup.POST("chooseCourse", chooseCourse)              //选课
 		studentGroup.GET("/selection", selection)                    //学生查询自己的选课信息
 		studentGroup.POST("/quit", quit)                             //学生退出班级
 	}
@@ -60,7 +61,6 @@ func InitEngine() {
 		courseGroup.Use(parseToken)
 		courseGroup.GET("/getAllCourse", getAllCourse)           //获取所有课程详情
 		courseGroup.GET("/getSpecificCourse", getSpecificCourse) //模糊搜索
-		courseGroup.POST("/chooseCourse", chooseCourse)          //选课
 	}
 
 	engine.Run(":8080")
