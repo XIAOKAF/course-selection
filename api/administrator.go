@@ -60,9 +60,12 @@ func cancel(ctx *gin.Context) {
 	}
 	//查询该学生是否存在
 	_, err := service.HashGet(unifiedCode, "studentName")
-	if err == redis.Nil {
-		tool.Failure(ctx, 400, "该学生不存在")
-		return
+	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "该学生不存在")
+			return
+		}
+		tool.DealWithErr(ctx, err, "查询学生信息失败")
 	}
 	//删除MySQL中的信息
 	err = service.Cancel(unifiedCode)
