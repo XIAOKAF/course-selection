@@ -89,11 +89,7 @@ func changePwdByOldPwd(ctx *gin.Context) {
 	}
 	result, err := service.HashGet(tokenClaims.UserId, "password")
 	if err != nil {
-		if err == redis.Nil {
-			tool.Failure(ctx, 400, "该账号不存在哦")
-			return
-		}
-		tool.DealWithErr(ctx, err, "查询统一验证码以及对应密码错误")
+		tool.DealWithErr(ctx, err, "查询旧密码错误")
 	}
 	if result != oldPwd {
 		tool.Failure(ctx, 400, "原来的密码不正确哦")
