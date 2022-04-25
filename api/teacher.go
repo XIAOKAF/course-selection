@@ -71,7 +71,7 @@ func getTeachingClass(ctx *gin.Context) {
 		tool.DealWithErr(ctx, err, "查询课程编号错误")
 		//获取教学班开设的时间
 		teaching.SetTime, err = service.HashGet(v+"teaching", "setTime")
-		tool.DealWithErr(ctx, err, "获取教学班那开设时间错误")
+		tool.DealWithErr(ctx, err, "获取教学班开设时间错误")
 		teachingArr[i] = teaching
 	}
 	tool.Success(ctx, http.StatusOK, teachingArr)
