@@ -419,14 +419,19 @@ func quit(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	courseNumber := ctx.PostForm("courseNumber")
 	classNumber := ctx.PostForm("classNumber")
 	if classNumber == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	var filedName []string
-	filedName = append(filedName, tokenClaims.UserId)
-	err = service.HDel(classNumber, filedName)
+	var idArr []string
+	var courseNumberArr []string
+	courseNumberArr = append(courseNumberArr, courseNumber)
+	err = service.HDel(tokenClaims.UserId, courseNumberArr)
+	tool.DealWithErr(ctx, err, "删除学生信息中的选课记录失败")
+	idArr = append(idArr, tokenClaims.UserId)
+	err = service.HDel(classNumber, idArr)
 	tool.DealWithErr(ctx, err, "删除教学班内的学生信息失败")
 	tool.Success(ctx, 200, "你已经退出该班级")
 }
