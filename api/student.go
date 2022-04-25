@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func studentRegister(ctx *gin.Context) {
@@ -61,10 +62,14 @@ func studentLogin(ctx *gin.Context) {
 		tool.Success(ctx, 200, token)
 		return
 	}
-	err, token := service.RememberStatus(unifiedCode, 5)
+	err, token := service.CreateToken(unifiedCode, 2)
 	tool.DealWithErr(ctx, err, "创建token错误")
+	err, refreshToken := service.RememberStatus(unifiedCode, 5)
+	tool.DealWithErr(ctx, err, "创建refreshToken错误")
 	err = service.HashSet("token", unifiedCode, token)
-	tool.DealWithErr(ctx, err, "存储token错误")
+	tool.DealWithErr(ctx, err, "储存token失败")
+	err = service.HashSet("refreshToken", unifiedCode, refreshToken)
+	tool.DealWithErr(ctx, err, "存储refreshToken错误")
 	tool.Success(ctx, 200, token)
 }
 

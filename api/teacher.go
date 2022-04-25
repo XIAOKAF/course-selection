@@ -41,10 +41,14 @@ func teacherLogin(ctx *gin.Context) {
 		tool.Success(ctx, 200, token)
 		return
 	}
-	err, token := service.RememberStatus(workNumber, 5)
+	err, token := service.CreateToken(workNumber, 2)
 	tool.DealWithErr(ctx, err, "创建token错误")
+	err, refreshToken := service.RememberStatus(workNumber, 5)
+	tool.DealWithErr(ctx, err, "创建refreshToken错误")
 	err = service.HashSet("token", workNumber, token)
-	tool.DealWithErr(ctx, err, "存储token错误")
+	tool.DealWithErr(ctx, err, "存储token失败")
+	err = service.HashSet("refreshToken", workNumber, refreshToken)
+	tool.DealWithErr(ctx, err, "存储refreshToken失败")
 	tool.Success(ctx, 200, token)
 }
 
