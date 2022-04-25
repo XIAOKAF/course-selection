@@ -305,6 +305,76 @@ func selectInfo(ctx *gin.Context) {
 	tool.Success(ctx, 200, student)
 }
 
+//选课
+func chooseCourse(ctx *gin.Context) {
+	//中间件验证请求头是否携带token且token存在并合格
+	//从token中获取id方便后续插入数据的操作
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	tool.DealWithErr(ctx, err, "token解析出错")
+	courseNumber := ctx.PostForm("courseNumber")
+	teachingClass := ctx.PostForm("teachingClass")
+	if courseNumber == "" || teachingClass == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	//在redis中查询该课程编号哈希表
+	_, err = service.HashGet(courseNumber, "courseName")
+	tool.DealWithErr(ctx, err, "查询课程编号出错")
+	//查询学生是否已经选择过该课程
+	err, flag := service.HExists(tokenClaims.UserId, courseNumber)
+	tool.DealWithErr(ctx, err, "查询学生是否已经选择过该课程出错")
+	if flag {
+		tool.Failure(ctx, 400, "你已经选择过该课程")
+		return
+	}
+	//判断选课时间是否冲突
+	//查询学生已选课程时间
+	err, selectCurriculumArr := service.HKeys(tokenClaims.UserId + "teaching")
+	tool.DealWithErr(ctx, err, "查询学生已选择课程出错")
+	err, selectCourseArr := service.HVals(tokenClaims.UserId + "teaching")
+	tool.DealWithErr(ctx, err, "查询学生已加入教学班出错")
+	selectString := ""
+	var build strings.Builder
+	for i, _ := range selectCourseArr {
+		selectTime, err := service.HashGet(selectCurriculumArr[i]+"teaching", selectCourseArr[i])
+		tool.DealWithErr(ctx, err, "查询课程开设时间出错")
+		build.WriteString(selectString)
+		if i == 0 {
+			build.WriteString(selectTime)
+		} else {
+			build.WriteString(" " + selectTime)
+		}
+		selectString = build.String()
+	}
+	selectArr := strings.Fields(selectString)
+	//查询当前所选课程时间
+	setTime, err := service.HashGet(courseNumber+"teaching", teachingClass)
+	tool.DealWithErr(ctx, err, "查询当前所选课程开设时间出错")
+	setTimeArr := strings.Fields(setTime)
+	//判断二者是否有交集
+	flag = service.IsRepeated(selectArr, setTimeArr)
+	if !flag {
+		tool.Failure(ctx, 400, "课程时间出现冲突")
+		return
+	}
+	//根据token中提供的学生统一验证码检索学生姓名
+	name, err := service.HashGet(tokenClaims.UserId, "studentName")
+	choice := model.Choice{
+		TeachingClass: teachingClass,
+		UnifiedCode:   tokenClaims.UserId,
+		StudentName:   name,
+	}
+	//将学生选课信息存入redis
+	//存入统一验证码为名的哈希表
+	err = service.HashSet(tokenClaims.UserId, courseNumber, teachingClass)
+	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	//存入以教学班编号为名的哈希表
+	err = service.HashSet(choice.TeachingClass, choice.UnifiedCode, choice.StudentName)
+	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	tool.Success(ctx, 200, "选课成功")
+}
+
 //查询个人选课信息
 func selection(ctx *gin.Context) {
 	//解析token获取id
