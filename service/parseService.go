@@ -2,8 +2,7 @@ package service
 
 import (
 	"course-selection/model"
-	feat "encoding/json"
-	"github.com/storyicon/grbac"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 )
@@ -86,4 +85,22 @@ func ParseSmsConfig(sms model.Message) (model.Message, error) {
 		return sms, err
 	}
 	return sms, nil
+}
+
+// ParseBucket 解析储存桶配置文件
+func ParseBucket() (model.Bucket, error) {
+	bucket := model.Bucket{}
+	file, err := os.Open("config/bucketConfig.json")
+	if err != nil {
+		return bucket, err
+	}
+	fileByte, err := ioutil.ReadAll(file)
+	if err != nil {
+		return bucket, err
+	}
+	err = json.Unmarshal(fileByte, &bucket)
+	if err != nil {
+		return bucket, err
+	}
+	return bucket, nil
 }
