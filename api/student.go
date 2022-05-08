@@ -124,54 +124,50 @@ func loginByStudentId(ctx *gin.Context) {
 	tool.Success(ctx, 200, token)
 }
 
-//通过原密码修改密码
-func changePwdByOldPwd(ctx *gin.Context) {
-	tokenString := ctx.Request.Header.Get("token")
-	tokenClaims, err := service.ParseToken(tokenString)
+//短信验证码修改密码
+func changePwdByCode(ctx *gin.Context) {
+	mobile := ctx.PostForm("mobile")
+	code := ctx.PostForm("code")
+	pwd := ctx.PostForm("newPwd")
+	confirmPwd := ctx.PostForm("confirmPwd")
+	if mobile == "" || code == "" || pwd == "" || confirmPwd == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	if pwd != confirmPwd {
+		tool.Failure(ctx, 400, "两次密码输入不一致")
+		return
+	}
+	rightCode, err := service.Get(mobile + "code")
 	if err != nil {
-		fmt.Println("token解析失败", err)
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "验证码已过期")
+			return
+		}
+		fmt.Println("查询验证码失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	oldPwd := ctx.PostForm("oldPwd")
-	newPwd := ctx.PostForm("newPwd")
-	if oldPwd == "" {
-		tool.Failure(ctx, 400, "悄悄提醒你，初始验证码为姓名拼音哦")
+	if rightCode != code {
+		tool.Failure(ctx, 400, "验证码错误")
 		return
 	}
-	if newPwd == "" {
-		tool.Failure(ctx, 400, "(・∀・新密码是？")
-		return
-	}
-	result, err := service.HashGet(tokenClaims.UserId, "password")
-	if err != nil {
-		fmt.Println("查询旧密码失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if result != oldPwd {
-		tool.Failure(ctx, 400, "原来的密码不正确哦")
-		return
-	}
-	student := model.Student{
-		UnifiedCode: tokenClaims.UserId,
-		Password:    newPwd,
-	}
-	//MySQL更新
-	err = service.UpdatePassword(student)
-	if err != nil {
-		fmt.Println("MySQL更新密码失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+
 	//redis更新
-	err = service.HashSet(tokenClaims.UserId, "password", newPwd)
+	studentId, err := service.HashGet(mobile, "studentId")
 	if err != nil {
-		fmt.Println("redis更新密码失败", err)
+		fmt.Println("查询学号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	tool.Success(ctx, 200, "成功♪(^∇^*)")
+	err = service.HashSet(studentId, "password", pwd)
+	if err != nil {
+		fmt.Println("重置密码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
+	tool.Success(ctx, 200, "密码更新成功♪(^∇^*)")
 }
 
 func updateMobile(ctx *gin.Context) {
