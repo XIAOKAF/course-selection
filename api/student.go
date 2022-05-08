@@ -328,8 +328,6 @@ func getAvatar(ctx *gin.Context) {
 
 //选课
 func chooseCourse(ctx *gin.Context) {
-	//中间件验证请求头是否携带token且token存在并合格
-	//从token中获取id方便后续插入数据的操作
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
 	if err != nil {
@@ -337,99 +335,109 @@ func chooseCourse(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	courseNumber := ctx.PostForm("courseNumber")
 	teachingClass := ctx.PostForm("teachingClass")
 	if courseNumber == "" || teachingClass == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	//在redis中查询该课程编号哈希表
-	_, err = service.HashGet(courseNumber, "courseName")
+
+	//查询课程
+	_, err = service.HashGet("curriculum", courseNumber)
 	if err != nil {
-		fmt.Println("查询课程编号失败", err)
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "课程不存在")
+			return
+		}
+		fmt.Println("查询课程编号是否存在失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
+	//查询教学班
+	_, err = service.HashGet(courseNumber, "teachingClassNumber")
+	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "教学班不存在")
+			return
+		}
+		fmt.Println("查询教学班是否存在失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	//查询学生是否已经选择过该课程
-	err, flag := service.HExists(tokenClaims.UserId, courseNumber)
+	mobile, err := service.HashGet(tokenClaims.Identify, "mobile")
 	if err != nil {
-		fmt.Println("查询学生是否已经选择过该课程失败", err)
+		fmt.Println("查询电话号码失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if flag {
-		tool.Failure(ctx, 400, "你已经选择过该课程")
-		return
-	}
-	//判断选课时间是否冲突
-	//查询学生已选课程时间
-	err, selectCurriculumArr := service.HKeys(tokenClaims.UserId + "teaching")
-	if err != nil {
-		fmt.Println("查询学生已选择课程失败", err)
+	_, err = service.HashGet(mobile, courseNumber)
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询学生是否已经选则该课程失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err, selectCourseArr := service.HVals(tokenClaims.UserId + "teaching")
-	if err != nil {
-		fmt.Println("获取学生已加入教学班失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	selectString := ""
-	var build strings.Builder
-	for i, _ := range selectCourseArr {
-		selectTime, err := service.HashGet(selectCurriculumArr[i]+"teaching", selectCourseArr[i])
+
+	if err == redis.Nil {
+		//判断选课时间是否冲突
+		err, selectedTeachingClassArr := service.HVals(mobile)
 		if err != nil {
-			fmt.Println("查询课程开设时间失败", err)
+			fmt.Println("获取学生已加入教学班失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		build.WriteString(selectString)
-		if i == 0 {
-			build.WriteString(selectTime)
-		} else {
-			build.WriteString(" " + selectTime)
+
+		var selectedTimeArr []string
+		for _, v := range selectedTeachingClassArr {
+			selectedTime, err := service.HashGet(v, "setTime")
+			if err != nil {
+				fmt.Println("查询课程开设时间失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			timeArr := strings.Split(selectedTime, ",")
+			for _, val := range timeArr {
+				selectedTimeArr = append(selectedTimeArr, val)
+			}
 		}
-		selectString = build.String()
+
+		//查询当前所选课程时间
+		setTime, err := service.HashGet(teachingClass, "setTime")
+		if err != nil {
+			fmt.Println("查询当前所选课程开设时间出错", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		setTimeArr := strings.Split(setTime, ",")
+
+		//判断课程是否存在时间冲突
+		ok := service.JudgeTimeConflict(selectedTimeArr, setTimeArr)
+		if ok {
+			tool.Failure(ctx, 400, "课程存在时间冲突")
+			return
+		}
+
+		//将选课信息存入学生信息
+		err = service.HashSet(mobile, courseNumber, teachingClass)
+		if err != nil {
+			fmt.Println("将选课信息存入学生信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+
+		//将选课信息存入课程信息
+		err = service.HashSet(teachingClass, tokenClaims.Identify, mobile)
+		if err != nil {
+			fmt.Println("将选课信息存入课程信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		tool.Success(ctx, 200, "选课成功")
 	}
-	selectArr := strings.Fields(selectString)
-	//查询当前所选课程时间
-	setTime, err := service.HashGet(courseNumber+"teaching", teachingClass)
-	if err != nil {
-		fmt.Println("查询当前所选课程开设时间出错", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	setTimeArr := strings.Fields(setTime)
-	//判断二者是否有交集
-	flag = service.IsRepeated(selectArr, setTimeArr)
-	if !flag {
-		tool.Failure(ctx, 400, "课程时间出现冲突")
-		return
-	}
-	//根据token中提供的学生统一验证码检索学生姓名
-	name, err := service.HashGet(tokenClaims.UserId, "studentName")
-	choice := model.Choice{
-		TeachingClass: teachingClass,
-		UnifiedCode:   tokenClaims.UserId,
-		StudentName:   name,
-	}
-	//将学生选课信息存入redis
-	//存入统一验证码为名的哈希表
-	err = service.HashSet(tokenClaims.UserId, courseNumber, teachingClass)
-	if err != nil {
-		fmt.Println("将选课信息存入redis失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	//存入以教学班编号为名的哈希表
-	err = service.HashSet(choice.TeachingClass, choice.UnifiedCode, choice.StudentName)
-	if err != nil {
-		fmt.Println("将选课信息存入redis失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	tool.Success(ctx, 200, "选课成功")
+	tool.Failure(ctx, 400, "你已选择过该课程")
 }
 
 //查询个人选课信息
