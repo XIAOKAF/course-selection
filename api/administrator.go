@@ -91,13 +91,13 @@ func administratorLogin(ctx *gin.Context) {
 
 //注销学生账号
 func cancel(ctx *gin.Context) {
-	unifiedCode := ctx.PostForm("unifiedCode")
-	if unifiedCode == "" {
+	studentId := ctx.PostForm("studentId")
+	if studentId == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
 	//查询该学生是否存在
-	_, err := service.HashGet(unifiedCode, "studentName")
+	_, err := service.HashGet(studentId, "mobile")
 	if err != nil {
 		if err == redis.Nil {
 			tool.Failure(ctx, 400, "该学生不存在")
@@ -108,24 +108,25 @@ func cancel(ctx *gin.Context) {
 		return
 	}
 	//删除MySQL中的信息
-	err = service.Cancel(unifiedCode)
+	err = service.Cancel(studentId)
 	if err != nil {
 		fmt.Println("删除学生信息错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
 	//删除redis中的信息
-	err, keysArr := service.HKeys(unifiedCode)
+	err, keysArr := service.HKeys(studentId)
 	if err != nil {
 		fmt.Println("删除学生信息错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.HDel(unifiedCode, keysArr)
+	err = service.HDel(studentId, keysArr)
 	if err != nil {
 		fmt.Println("删除学生信息错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	tool.Success(ctx, http.StatusOK, "已经将该学生删除")
 }
