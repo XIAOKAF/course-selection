@@ -12,7 +12,7 @@ import (
 	tencentsms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
 )
 
-//发送短信（短信登录，通过短信找回密码
+//发送短信
 func sendSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	//查询电话号码是否存在
