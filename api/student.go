@@ -298,6 +298,34 @@ func selectInfo(ctx *gin.Context) {
 	tool.Success(ctx, 200, student)
 }
 
+//获取头像
+func getAvatar(ctx *gin.Context) {
+	tokenString := ctx.Request.Header.Get("token")
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	bucket, err := service.ParseBucket()
+	if err != nil {
+		fmt.Println("解析存储桶错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	u, _ := url.Parse(bucket.Url)
+	b := &cos.BaseURL{BucketURL: u}
+	client := cos.NewClient(b, &http.Client{
+		Transport: &cos.AuthorizationTransport{
+			SecretID:  bucket.SecretId,
+			SecretKey: bucket.SecretKey,
+		},
+	})
+	avatar := client.Object.GetObjectURL(tokenClaims.Identify)
+
+	tool.Success(ctx, 200, avatar.Scheme+"://"+avatar.Host+avatar.Path)
+}
+
 //选课
 func chooseCourse(ctx *gin.Context) {
 	//中间件验证请求头是否携带token且token存在并合格

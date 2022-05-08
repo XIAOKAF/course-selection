@@ -39,6 +39,7 @@ func InitEngine() {
 		studentGroup.POST("/changePwdByCode", changePwdByCode) //验证码修改密码
 		studentGroup.POST("/updateAvatar", updateAvatar)       //更新头像
 		studentGroup.GET("/selectInfo", selectInfo)            //查询学生信息
+		studentGroup.GET("/getAvatar", getAvatar)              //获取学生头像
 		studentGroup.POST("/chooseCourse", chooseCourse)       //选课
 		studentGroup.GET("/selection", selection)              //学生查询自己的选课信息
 		studentGroup.DELETE("/quit", quit)                     //学生退出班级
