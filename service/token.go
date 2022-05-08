@@ -16,7 +16,7 @@ func RememberStatus(id string, duration time.Duration) (error, string) {
 func CreateToken(id string, duration time.Duration) (error, string) {
 	expireTime := time.Now().Add(duration * time.Minute)
 	claims := model.TokenClaims{
-		UserId:     id,
+		Identify:   id,
 		ExpireTime: expireTime,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
@@ -32,16 +32,20 @@ func CreateToken(id string, duration time.Duration) (error, string) {
 }
 
 func ParseToken(tokenString string) (*model.TokenClaims, error) {
-	tokenClaims := &model.TokenClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, tokenClaims, func(token *jwt.Token) (interface{}, error) {
+	var tokenClaims model.TokenClaims
+	token, err := jwt.ParseWithClaims(tokenString, &tokenClaims, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})
 	if err != nil {
-		return tokenClaims, err
+		return nil, err
 	}
 	claims, ok := token.Claims.(*model.TokenClaims)
 	if !ok {
-		return claims, errors.New("token解析失败")
+		return nil, errors.New("fail to parse token")
+	}
+	err = token.Claims.Valid()
+	if err != nil {
+		return nil, err
 	}
 	return claims, nil
 }
