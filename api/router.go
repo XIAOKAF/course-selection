@@ -31,8 +31,8 @@ func InitEngine() {
 	}
 
 	//学生接口
-	engine.POST("/studentRegister", studentRegister) //学生注册
-	engine.POST("/studentLogin", studentLogin)       //密码登录
+	engine.POST("/studentRegister", studentRegister)   //学生注册
+	engine.POST("/loginByStudentId", loginByStudentId) //密码登录
 	studentGroup := engine.Group("/student")
 	{
 		studentGroup.Use(parseToken)                                 //解析token

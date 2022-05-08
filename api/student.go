@@ -52,68 +52,75 @@ func studentRegister(ctx *gin.Context) {
 	tool.Success(ctx, 200, "注册成功")
 }
 
-func studentLogin(ctx *gin.Context) {
-	unifiedCode := ctx.PostForm("unifiedCode")
+//学号密码登录
+func loginByStudentId(ctx *gin.Context) {
+	studentId := ctx.PostForm("studentId")
 	password := ctx.PostForm("pwd")
 	auth := ctx.PostForm("auth")
-	if unifiedCode == "" || password == "" {
+	if studentId == "" || password == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
+	pwd, err := service.HashGet(studentId, "password")
 	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "学号错误")
+			return
+		}
+		fmt.Println("查询密码错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
+
+	if password != pwd {
+		tool.Failure(ctx, 400, "密码错误")
 		return
 	}
-	if pwd != password {
-		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
+
+	err, token := service.CreateToken(studentId, 200)
+	if err != nil {
+		fmt.Println("创建token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	err = service.HashSet(studentId, "token", token)
+	if err != nil {
+		fmt.Println("储存token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	if auth == "" {
-		err, token := service.CreateToken(unifiedCode, 2)
+		//不授权长时间免密登录
+		err, refreshToken := service.CreateToken(studentId, 500)
 		if err != nil {
-			fmt.Println("创建token失败", err)
+			fmt.Println("创建refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		err = service.HashSet("token", unifiedCode, token)
+		err = service.HashSet(studentId, "refreshToken", refreshToken)
 		if err != nil {
-			fmt.Println("储存token失败", err)
+			fmt.Println("储存refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
 		tool.Success(ctx, 200, token)
 		return
 	}
-	err, token := service.CreateToken(unifiedCode, 2)
-	if err != nil {
-		fmt.Println("创建token失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	err, refreshToken := service.RememberStatus(unifiedCode, 5)
+
+	err, refreshToken := service.RememberStatus(studentId, 1000)
 	if err != nil {
 		fmt.Println("创建refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.HashSet("token", unifiedCode, token)
-	if err != nil {
-		fmt.Println("储存token失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	err = service.HashSet("refreshToken", unifiedCode, refreshToken)
+	err = service.HashSet(studentId, "refreshToken", refreshToken)
 	if err != nil {
 		fmt.Println("储存refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	tool.Success(ctx, 200, token)
 }
 
