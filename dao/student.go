@@ -3,7 +3,7 @@ package dao
 import "course-selection/model"
 
 func SpiderMan(student model.Student) error {
-	result := DB.Select("unifiedCode", "studentName", "gender", "grade", "class", "password", "department", "major", "ruleId").Create(&student)
+	result := DB.Select("student_id", "student_name", "gender", "grade", "class", "department", "major", "rule_id").Create(&student)
 	return result.Error
 }
 
