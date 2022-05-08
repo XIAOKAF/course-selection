@@ -6,6 +6,7 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"net/http"
 	"strconv"
 )
@@ -19,18 +20,18 @@ func teacherLogin(ctx *gin.Context) {
 		return
 	}
 	//查询该教师是否存在
-	err, flag := service.HExists("teacher", workNumber)
+	_, err := service.HashGet("teacher", workNumber)
 	if err != nil {
-		fmt.Println("查询教师工号是否存在失败", err)
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "教师工号不存在")
+			return
+		}
+		fmt.Println("查询教师是否存在失败")
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "该教师不存在")
-		return
-	}
 	//密码是否正确
-	pwd, err := service.HashGet("teacher", workNumber)
+	pwd, err := service.HashGet(workNumber, "password")
 	if err != nil {
 		fmt.Println("查询教师密码失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
@@ -40,47 +41,50 @@ func teacherLogin(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "密码错误")
 		return
 	}
+	err, token := service.CreateToken(workNumber, 200)
+	if err != nil {
+		fmt.Println("创建token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(workNumber, "token", token)
+	if err != nil {
+		fmt.Println("储存token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	if auth == "" {
-		//记住登录状态（24h
-		err, token := service.CreateToken(workNumber, 2)
+		//不授权长时间免密登录
+		err, refreshToken := service.CreateToken(workNumber, 500)
 		if err != nil {
-			fmt.Println("创建token失败", err)
+			fmt.Println("创建refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		err = service.HashSet("token", workNumber, token)
+		err = service.HashSet(workNumber, "refreshToken", refreshToken)
 		if err != nil {
-			fmt.Println("储存token失败", err)
+			fmt.Println("储存refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
 		tool.Success(ctx, 200, token)
 		return
 	}
-	err, token := service.CreateToken(workNumber, 2)
-	if err != nil {
-		fmt.Println("创建token失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	err, refreshToken := service.RememberStatus(workNumber, 5)
+
+	err, refreshToken := service.RememberStatus(workNumber, 1000)
 	if err != nil {
 		fmt.Println("创建refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.HashSet("token", workNumber, token)
-	if err != nil {
-		fmt.Println("储存token失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	err = service.HashSet("refreshToken", workNumber, refreshToken)
+	err = service.HashSet(workNumber, "refreshToken", refreshToken)
 	if err != nil {
 		fmt.Println("储存refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	tool.Success(ctx, 200, token)
 }
 
