@@ -524,25 +524,31 @@ func quit(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	courseNumber := ctx.PostForm("courseNumber")
 	classNumber := ctx.PostForm("classNumber")
-	if classNumber == "" {
+	if classNumber == "" || courseNumber == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	var idArr []string
-	var courseNumberArr []string
-	courseNumberArr = append(courseNumberArr, courseNumber)
-	err = service.HDel(tokenClaims.UserId, courseNumberArr)
+	//查询电话号码
+	mobile, err := service.HashGet(tokenClaims.Identify, "mobile")
 	if err != nil {
-		fmt.Println("删除学生信息中的选课失败", err)
+		fmt.Println("查询电话号码失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	idArr = append(idArr, tokenClaims.UserId)
-	err = service.HDel(classNumber, idArr)
+	//删除学生信息中的选课信息
+	err = service.HDelSingle(mobile, courseNumber)
 	if err != nil {
-		fmt.Println("删除教学班内的学生信息失败", err)
+		fmt.Println("删除学生信息中的选课信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	//删除教学班信息中的学生信息
+	err = service.HDelSingle(classNumber, tokenClaims.Identify)
+	if err != nil {
+		fmt.Println("删除教学班信息中的学生信息失败")
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
