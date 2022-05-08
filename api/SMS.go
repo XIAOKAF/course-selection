@@ -17,7 +17,11 @@ func sendSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
 	//查询电话号码是否存在
 	flag, err := service.IsMobileExist(mobile)
-	tool.DealWithErr(ctx, err, "查询电话号码是否存在错误")
+	if err != nil {
+		fmt.Println("查询电话号码是否存在失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if !flag {
 		tool.Failure(ctx, 400, "电话号码不存在")
 		return
@@ -77,13 +81,20 @@ func checkSms(ctx *gin.Context) {
 			tool.Failure(ctx, 400, "验证码已过期或电话号码错误")
 			return
 		}
+		fmt.Println("查询验证码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
 	}
-	tool.DealWithErr(ctx, err, "查询验证码错误")
+
 	if duration == -1 {
-		fmt.Println(ctx, "验证码没有设置过期时间")
+		fmt.Println("验证码没有设置过期时间")
 		//删除电话号码-验证码键值对
 		err = service.Del(mobile)
-		tool.DealWithErr(ctx, err, "删除电话号码验证码键值对出错")
+		if err != nil {
+			fmt.Println("删除验证码错误且验证码未设置过期时间", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}

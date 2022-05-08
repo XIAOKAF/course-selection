@@ -4,6 +4,7 @@ import (
 	"course-selection/model"
 	"course-selection/service"
 	"course-selection/tool"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -23,7 +24,11 @@ func parseToken(ctx *gin.Context) {
 	token, err := jwt.ParseWithClaims(tokenString, tokenClaims, func(token *jwt.Token) (i interface{}, err error) {
 		return jwtKey, nil
 	})
-	tool.DealWithErr(ctx, err, "解析token错误")
+	if err != nil {
+		fmt.Println("解析token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	claims, ok := token.Claims.(*model.TokenClaims)
 	if !ok {
 		tool.Failure(ctx, 500, "服务器错误")
@@ -31,7 +36,11 @@ func parseToken(ctx *gin.Context) {
 		return
 	}
 	result, err := service.HashGet("token", claims.UserId)
-	tool.DealWithErr(ctx, err, "查询token出错")
+	if err != nil {
+		fmt.Println("查询token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if result != tokenString {
 		tool.Failure(ctx, 400, "token错误")
 		return
@@ -43,7 +52,11 @@ func parseToken(ctx *gin.Context) {
 		var filedName []string
 		filedName = append(filedName, claims.UserId)
 		err := service.HDel("token", filedName)
-		tool.DealWithErr(ctx, err, "删除token出错")
+		if err != nil {
+			fmt.Println("删除token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		//查询refreshToken
 		result, err := service.HashGet("refreshToken", claims.UserId)
 		if err != nil {
@@ -51,7 +64,11 @@ func parseToken(ctx *gin.Context) {
 				tool.Failure(ctx, 400, "token已经失效")
 				return
 			}
-			tool.DealWithErr(ctx, err, "查询refreshToken出错")
+			if err != nil {
+				fmt.Println("查询refreshToken失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
 		}
 		//解析refreshToken
 		token, err := jwt.ParseWithClaims(result, tokenClaims, func(token *jwt.Token) (i interface{}, err error) {
@@ -63,14 +80,21 @@ func parseToken(ctx *gin.Context) {
 			var refreshToken []string
 			refreshToken = append(refreshToken, result)
 			err := service.HDel("refreshToken", refreshToken)
-			tool.DealWithErr(ctx, err, "删除refreshToken出错")
+			if err != nil {
+				fmt.Println("删除refreshToken失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
 			tool.Failure(ctx, 400, "请先登录")
 		}
 		//创建新的token
 		err, newToken := service.CreateToken(claims.UserId, 2)
-		tool.DealWithErr(ctx, err, "创建token出错")
+		if err != nil {
+			fmt.Println("创建token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		tool.Success(ctx, 200, newToken)
 	}
-
 	tool.Success(ctx, 200, tokenClaims.UserId+"你好")
 }

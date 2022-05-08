@@ -38,16 +38,33 @@ func administratorLogin(ctx *gin.Context) {
 	}
 	if auth == "" {
 		err, token := service.CreateToken(administratorId, 2)
-		tool.DealWithErr(ctx, err, "创建token错误")
+		if err != nil {
+			fmt.Println("创建token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		err = service.HashSet("token", administratorId, token)
-		tool.DealWithErr(ctx, err, "存储token错误")
+		if err != nil {
+			fmt.Println("储存token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		tool.Success(ctx, 200, token)
 		return
 	}
+
 	err, token := service.RememberStatus(administratorId, 5)
-	tool.DealWithErr(ctx, err, "创建token错误")
+	if err != nil {
+		fmt.Println("创建token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.HashSet("token", administratorId, token)
-	tool.DealWithErr(ctx, err, "存储token错误")
+	if err != nil {
+		fmt.Println("储存token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, token)
 }
 
@@ -65,15 +82,29 @@ func cancel(ctx *gin.Context) {
 			tool.Failure(ctx, 400, "该学生不存在")
 			return
 		}
-		tool.DealWithErr(ctx, err, "查询学生信息失败")
+		fmt.Println("查询学生姓名失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
 	}
 	//删除MySQL中的信息
 	err = service.Cancel(unifiedCode)
-	tool.DealWithErr(ctx, err, "删除MySQL中的学生信息错误")
+	if err != nil {
+		fmt.Println("删除学生信息错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//删除redis中的信息
 	err, keysArr := service.HKeys(unifiedCode)
-	tool.DealWithErr(ctx, err, "查询学生信息出错")
+	if err != nil {
+		fmt.Println("删除学生信息错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.HDel(unifiedCode, keysArr)
-	tool.DealWithErr(ctx, err, "删除redis中的学生信息错误")
+	if err != nil {
+		fmt.Println("删除学生信息错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, http.StatusOK, "已经将该学生删除")
 }

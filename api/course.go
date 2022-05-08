@@ -4,6 +4,7 @@ import (
 	"course-selection/model"
 	"course-selection/service"
 	"course-selection/tool"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
@@ -27,17 +28,29 @@ func createCurriculum(ctx *gin.Context) {
 	//存在则不允许再创建
 	//课程存在返回true，反之则false
 	err, flag := service.SIsMember("course", courseNumber)
-	tool.DealWithErr(ctx, err, "查询课程编号是否存在失败")
+	if err != nil {
+		fmt.Println("查询课程编号是否存在失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if flag {
 		tool.Failure(ctx, 400, "该课程已经存在")
 		return
 	}
 
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
-	tool.DealWithErr(ctx, err, "课程学分string转float64错误")
+	if err != nil {
+		fmt.Println("课程编号转换数据类型错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//课程类型1表示选修，2表示必修
 	classType, err := strconv.Atoi(courseType)
-	tool.DealWithErr(ctx, err, "课程类型string转int错误")
+	if err != nil {
+		fmt.Println("课程类型转换数据类型失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	course := model.Course{
 		CourseNumber:     courseNumber,
 		CourseName:       courseName,
@@ -49,12 +62,24 @@ func createCurriculum(ctx *gin.Context) {
 
 	//将课程信息放入MySQL
 	err = service.CreateCourse(course)
-	tool.DealWithErr(ctx, err, "课程信息存入MySQL出错")
+	if err != nil {
+		fmt.Println("将课程信息存入MySQL失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//将信息存入redis
 	err = service.SetAdd("course", courseNumber)
-	tool.DealWithErr(ctx, err, "课程信息存入redis失败")
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.RCreateCourse(course)
-	tool.DealWithErr(ctx, err, "课程信息存入redis出错")
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "成功创建课程")
 }
 
@@ -70,14 +95,23 @@ func detailCurriculum(ctx *gin.Context) {
 	}
 	//在redis中查询该课程是否存在
 	err, flag := service.SelectCourse(courseNumber)
-	tool.DealWithErr(ctx, err, "从redis中查询课程编号出错")
+	if err != nil {
+		fmt.Println("查询教学班失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	if !flag {
 		tool.Failure(ctx, 400, "该课程不存在")
 		return
 	}
 	//在MySQL中查询该教师是否存在
 	flag, err = service.SelectTeacher(teacherNumber)
-	tool.DealWithErr(ctx, err, "从MySQL中查询教师编号出错")
+	if err != nil {
+		fmt.Println("查询教师编号失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if !flag {
 		tool.Failure(ctx, 400, "教师不存在")
 		return
@@ -89,29 +123,54 @@ func detailCurriculum(ctx *gin.Context) {
 	}
 	//将数据存入redis
 	err = service.SetAdd(teacherNumber, teachingClass)
-	tool.DealWithErr(ctx, err, "将教学信息存入redis失败")
+	if err != nil {
+		fmt.Println("将教学信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.RDetailsCourse(teaching)
-	tool.DealWithErr(ctx, err, "将教学信息存入redis出错")
+	if err != nil {
+		fmt.Println("将教学信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "教学信息设置成功")
 }
 
 //展示所有的课程信息
 func getAllCourse(ctx *gin.Context) {
 	err, members := service.SetGet("course")
-	tool.DealWithErr(ctx, err, "从redis中获取课程编号错误")
+	if err != nil {
+		fmt.Println("从redis中获取课程编号失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	var courseDetails model.Course
 	var courseDetailsArr []model.Course
 	for _, val := range members {
 		err, result := service.HashGetAll(val)
-		tool.DealWithErr(ctx, err, "查询课程详情出错")
+		if err != nil {
+			fmt.Println("查询课程详情失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		courseDetails.CourseNumber = result["courseNumber"]
 		courseDetails.CourseName = result["courseName"]
 		courseDetails.CourseDepartment = result["courseDepartment"]
 		credit, err := strconv.ParseFloat(result["courseCredit"], 64)
-		tool.DealWithErr(ctx, err, "学分string转为float出错")
+		if err != nil {
+			fmt.Println("学分数据类型转换失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		courseDetails.CourseCredit = credit
 		classType, err := strconv.Atoi(result["courseType"])
-		tool.DealWithErr(ctx, err, "课程类型string转为int出错")
+		if err != nil {
+			fmt.Println("课程类型数据类型转换失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+
 		courseDetails.CourseType = classType
 		courseDetails.Duration = result["duration"]
 		courseDetailsArr = append(courseDetailsArr, courseDetails)

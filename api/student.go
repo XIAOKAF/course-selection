@@ -24,7 +24,11 @@ func studentRegister(ctx *gin.Context) {
 	}
 	//查询该学生是否是本校学生，是则返回true，不是则返回false
 	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
-	tool.DealWithErr(ctx, err, "查询统一验证码错误")
+	if err != nil {
+		fmt.Println("查询统一验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if !flag {
 		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
 		return
@@ -45,7 +49,11 @@ func studentLogin(ctx *gin.Context) {
 		return
 	}
 	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
-	tool.DealWithErr(ctx, err, "查询统一验证码错误")
+	if err != nil {
+		fmt.Println("查询统一验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if !flag {
 		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
 		return
@@ -56,20 +64,44 @@ func studentLogin(ctx *gin.Context) {
 	}
 	if auth == "" {
 		err, token := service.CreateToken(unifiedCode, 2)
-		tool.DealWithErr(ctx, err, "创建token错误")
+		if err != nil {
+			fmt.Println("创建token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		err = service.HashSet("token", unifiedCode, token)
-		tool.DealWithErr(ctx, err, "存储token错误")
+		if err != nil {
+			fmt.Println("储存token失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		tool.Success(ctx, 200, token)
 		return
 	}
 	err, token := service.CreateToken(unifiedCode, 2)
-	tool.DealWithErr(ctx, err, "创建token错误")
+	if err != nil {
+		fmt.Println("创建token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err, refreshToken := service.RememberStatus(unifiedCode, 5)
-	tool.DealWithErr(ctx, err, "创建refreshToken错误")
+	if err != nil {
+		fmt.Println("创建refreshToken失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.HashSet("token", unifiedCode, token)
-	tool.DealWithErr(ctx, err, "储存token失败")
+	if err != nil {
+		fmt.Println("储存token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err = service.HashSet("refreshToken", unifiedCode, refreshToken)
-	tool.DealWithErr(ctx, err, "存储refreshToken错误")
+	if err != nil {
+		fmt.Println("储存refreshToken失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, token)
 }
 
@@ -94,7 +126,9 @@ func changePwdByOldPwd(ctx *gin.Context) {
 	}
 	result, err := service.HashGet(tokenClaims.UserId, "password")
 	if err != nil {
-		tool.DealWithErr(ctx, err, "查询旧密码错误")
+		fmt.Println("查询旧密码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
 	}
 	if result != oldPwd {
 		tool.Failure(ctx, 400, "原来的密码不正确哦")
@@ -106,10 +140,18 @@ func changePwdByOldPwd(ctx *gin.Context) {
 	}
 	//MySQL更新
 	err = service.UpdatePassword(student)
-	tool.DealWithErr(ctx, err, "MySQL更新密码错误")
+	if err != nil {
+		fmt.Println("MySQL更新密码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//redis更新
 	err = service.HashSet(tokenClaims.UserId, "password", newPwd)
-	tool.DealWithErr(ctx, err, "redis更新密码错误")
+	if err != nil {
+		fmt.Println("redis更新密码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "成功♪(^∇^*)")
 }
 
@@ -134,7 +176,11 @@ func updateMobile(ctx *gin.Context) {
 			tool.Failure(ctx, 400, "统一验证码不存在")
 			return
 		}
-		tool.DealWithErr(ctx, err, "查询统一验证码错误")
+		if err != nil {
+			fmt.Println("查询统一验证码失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 	}
 	//发送校验短信
 	code := service.CreateCode()
@@ -153,7 +199,11 @@ func updateMobile(ctx *gin.Context) {
 	}
 	//redis存储
 	err = service.Set(tokenClaims.UserId, code, 2)
-	tool.DealWithErr(ctx, err, "redis储存验证码错误")
+	if err != nil {
+		fmt.Println("redis储存验证码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "成功发送短信")
 }
 
@@ -162,7 +212,11 @@ func checkCodeForUpdate(ctx *gin.Context) {
 	//确认登录状态
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
-	tool.DealWithErr(ctx, err, "解析token出错")
+	if err != nil {
+		fmt.Println("解析token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	newMobile := ctx.PostForm("newMobile")
 	code := ctx.PostForm("code")
 	//验证码是否正确且在保质期内
@@ -173,12 +227,20 @@ func checkCodeForUpdate(ctx *gin.Context) {
 			return
 		}
 	}
-	tool.DealWithErr(ctx, err, "查询验证码错误")
+	if err != nil {
+		fmt.Println("查询验证码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if duration == -1 {
 		fmt.Println(ctx, "验证码没有设置过期时间")
 		//删除电话号码-验证码键值对
 		err = service.Del(newMobile)
-		tool.DealWithErr(ctx, err, "删除电话号码验证码键值对出错")
+		if err != nil {
+			fmt.Println("删除电话号码-验证码键值对失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
@@ -192,7 +254,11 @@ func checkCodeForUpdate(ctx *gin.Context) {
 		Mobile:      newMobile,
 	}
 	err = service.UpdateMobile(student)
-	tool.DealWithErr(ctx, err, "MySQL更新出错")
+	if err != nil {
+		fmt.Println("MySQL更新失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//更新redis
 	err = service.HashSet(tokenClaims.UserId, "mobile", newMobile)
 	if err != nil {
@@ -202,7 +268,11 @@ func checkCodeForUpdate(ctx *gin.Context) {
 	}
 	//删除新电话号码-验证码键值对
 	err = service.Del(newMobile)
-	tool.DealWithErr(ctx, err, "redis删除验证码出错")
+	if err != nil {
+		fmt.Println("redis删除验证码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "电话号码更新成功")
 }
 
@@ -264,19 +334,47 @@ func selectInfo(ctx *gin.Context) {
 
 	//从redis中获取具体的信息
 	studentName, err := service.HashGet(tokenClaims.UserId, "studentName")
-	tool.DealWithErr(ctx, err, "获取学生姓名错误")
+	if err != nil {
+		fmt.Println("获取学生姓名失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	gender, err := service.HashGet(tokenClaims.UserId, "gender")
-	tool.DealWithErr(ctx, err, "获取学生性别错误")
+	if err != nil {
+		fmt.Println("获取学生性别失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	g, err := strconv.Atoi(gender)
-	tool.DealWithErr(ctx, err, "string转int错误")
+	if err != nil {
+		fmt.Println("string转int失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	grade, err := service.HashGet(tokenClaims.UserId, "grade")
-	tool.DealWithErr(ctx, err, "获取学生年级错误")
+	if err != nil {
+		fmt.Println("获取学生年级失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	class, err := service.HashGet(tokenClaims.UserId, "class")
-	tool.DealWithErr(ctx, err, "获取学生班级错误")
+	if err != nil {
+		fmt.Println("获取学生班级失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	department, err := service.HashGet(tokenClaims.UserId, "department")
-	tool.DealWithErr(ctx, err, "获取学生院系错误")
+	if err != nil {
+		fmt.Println("获取学生院系失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	major, err := service.HashGet(tokenClaims.UserId, "major")
-	tool.DealWithErr(ctx, err, "获取学生专业错误")
+	if err != nil {
+		fmt.Println("获取学生专业失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 
 	//从腾讯云对象储存内获取头像
 	u, _ := url.Parse("https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com")
@@ -292,7 +390,11 @@ func selectInfo(ctx *gin.Context) {
 		ThreadPoolSize: 5,
 	}
 	_, err = client.Object.Download(ctx, tokenClaims.UserId, file, opt)
-	tool.DealWithErr(ctx, err, "从腾讯云下载图片出错")
+	if err != nil {
+		fmt.Println("获取图片错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 
 	student := model.Student{
 		StudentName: studentName,
@@ -311,7 +413,11 @@ func chooseCourse(ctx *gin.Context) {
 	//从token中获取id方便后续插入数据的操作
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
-	tool.DealWithErr(ctx, err, "token解析出错")
+	if err != nil {
+		fmt.Println("token解析失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	courseNumber := ctx.PostForm("courseNumber")
 	teachingClass := ctx.PostForm("teachingClass")
 	if courseNumber == "" || teachingClass == "" {
@@ -320,10 +426,18 @@ func chooseCourse(ctx *gin.Context) {
 	}
 	//在redis中查询该课程编号哈希表
 	_, err = service.HashGet(courseNumber, "courseName")
-	tool.DealWithErr(ctx, err, "查询课程编号出错")
+	if err != nil {
+		fmt.Println("查询课程编号失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//查询学生是否已经选择过该课程
 	err, flag := service.HExists(tokenClaims.UserId, courseNumber)
-	tool.DealWithErr(ctx, err, "查询学生是否已经选择过该课程出错")
+	if err != nil {
+		fmt.Println("查询学生是否已经选择过该课程失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	if flag {
 		tool.Failure(ctx, 400, "你已经选择过该课程")
 		return
@@ -331,14 +445,26 @@ func chooseCourse(ctx *gin.Context) {
 	//判断选课时间是否冲突
 	//查询学生已选课程时间
 	err, selectCurriculumArr := service.HKeys(tokenClaims.UserId + "teaching")
-	tool.DealWithErr(ctx, err, "查询学生已选择课程出错")
+	if err != nil {
+		fmt.Println("查询学生已选择课程失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err, selectCourseArr := service.HVals(tokenClaims.UserId + "teaching")
-	tool.DealWithErr(ctx, err, "查询学生已加入教学班出错")
+	if err != nil {
+		fmt.Println("获取学生已加入教学班失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	selectString := ""
 	var build strings.Builder
 	for i, _ := range selectCourseArr {
 		selectTime, err := service.HashGet(selectCurriculumArr[i]+"teaching", selectCourseArr[i])
-		tool.DealWithErr(ctx, err, "查询课程开设时间出错")
+		if err != nil {
+			fmt.Println("查询课程开设时间失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		build.WriteString(selectString)
 		if i == 0 {
 			build.WriteString(selectTime)
@@ -350,7 +476,11 @@ func chooseCourse(ctx *gin.Context) {
 	selectArr := strings.Fields(selectString)
 	//查询当前所选课程时间
 	setTime, err := service.HashGet(courseNumber+"teaching", teachingClass)
-	tool.DealWithErr(ctx, err, "查询当前所选课程开设时间出错")
+	if err != nil {
+		fmt.Println("查询当前所选课程开设时间出错", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	setTimeArr := strings.Fields(setTime)
 	//判断二者是否有交集
 	flag = service.IsRepeated(selectArr, setTimeArr)
@@ -368,10 +498,18 @@ func chooseCourse(ctx *gin.Context) {
 	//将学生选课信息存入redis
 	//存入统一验证码为名的哈希表
 	err = service.HashSet(tokenClaims.UserId, courseNumber, teachingClass)
-	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	if err != nil {
+		fmt.Println("将选课信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	//存入以教学班编号为名的哈希表
 	err = service.HashSet(choice.TeachingClass, choice.UnifiedCode, choice.StudentName)
-	tool.DealWithErr(ctx, err, "将选课信息存入redis出错")
+	if err != nil {
+		fmt.Println("将选课信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "选课成功")
 }
 
@@ -386,24 +524,52 @@ func selection(ctx *gin.Context) {
 		return
 	}
 	err, courseNumberArr := service.HKeys(tokenClaims.UserId + "teaching")
-	tool.DealWithErr(ctx, err, "查询课程编号失败")
+	if err != nil {
+		fmt.Println("查询课程编号失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	err, classNumberArr := service.HVals(tokenClaims.UserId + "teaching")
-	tool.DealWithErr(ctx, err, "查询教学班失败")
+	if err != nil {
+		fmt.Println("查询教学班失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	teaching := model.Selection{}
 	var teachingSum []model.Selection
 	for i, v := range courseNumberArr {
 		teaching.CourseNumber = v
 		teaching.TeachingClass = classNumberArr[i]
 		teaching.CourseCredit, err = service.HashGet(tokenClaims.UserId, "courseCredit")
-		tool.DealWithErr(ctx, err, "查询课程学分错误")
+		if err != nil {
+			fmt.Println("查询课程学分失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		teaching.CourseType, err = service.HashGet(tokenClaims.UserId, "courseType")
-		tool.DealWithErr(ctx, err, "查询课程类型错误")
+		if err != nil {
+			fmt.Println("查询课程类型失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		teaching.SetTime, err = service.HashGet(v+"teaching", classNumberArr[i])
-		tool.DealWithErr(ctx, err, "查询教学班开设时间错误")
+		if err != nil {
+			fmt.Println("查询教学班开设时间失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		teacherNumber, err := service.HashGet(v+"teacher", classNumberArr[i])
-		tool.DealWithErr(ctx, err, "查询教师编号错误")
+		if err != nil {
+			fmt.Println("查询教师编号失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		teaching.TeacherName, err = service.HashGet(teacherNumber, "teacherName")
-		tool.DealWithErr(ctx, err, "查询教师姓名错误")
+		if err != nil {
+			fmt.Println("查询教师姓名失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
 		teachingSum[i] = teaching
 	}
 	tool.Success(ctx, http.StatusOK, teachingSum)
@@ -429,9 +595,17 @@ func quit(ctx *gin.Context) {
 	var courseNumberArr []string
 	courseNumberArr = append(courseNumberArr, courseNumber)
 	err = service.HDel(tokenClaims.UserId, courseNumberArr)
-	tool.DealWithErr(ctx, err, "删除学生信息中的选课记录失败")
+	if err != nil {
+		fmt.Println("删除学生信息中的选课失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	idArr = append(idArr, tokenClaims.UserId)
 	err = service.HDel(classNumber, idArr)
-	tool.DealWithErr(ctx, err, "删除教学班内的学生信息失败")
+	if err != nil {
+		fmt.Println("删除教学班内的学生信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "你已经退出该班级")
 }
