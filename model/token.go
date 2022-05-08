@@ -6,7 +6,8 @@ import (
 )
 
 type TokenClaims struct {
-	UserId     string
+	Identify   string
+	Variety    string
 	ExpireTime time.Time
 	jwt.StandardClaims
 }
