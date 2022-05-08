@@ -15,19 +15,23 @@ import (
 //发送短信
 func sendSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
+
 	//查询电话号码是否存在
-	flag, err := service.IsMobileExist(mobile)
+	_, err := service.HashGet(mobile, "studentId")
+
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "电话号码错误")
+			return
+		}
 		fmt.Println("查询电话号码是否存在失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "电话号码不存在")
-		return
-	}
+
 	//生成随机验证码
 	code := service.CreateCode()
+
 	//解析短信配置文件
 	var sms model.Message
 	sms, err = service.ParseSmsConfig(sms)
@@ -36,6 +40,7 @@ func sendSms(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	//连接
 	credential := common.NewCredential(sms.SignId, sms.SecretKey)
 	cpf := profile.NewClientProfile()
@@ -54,6 +59,7 @@ func sendSms(ctx *gin.Context) {
 	request.TemplateParamSet = common.StringPtrs([]string{code})
 	request.TemplateId = common.StringPtr(sms.TemplateId)
 	request.PhoneNumberSet = common.StringPtrs([]string{"+86" + mobile})
+
 	//发送短信
 	_, err = client.SendSms(request)
 	if err != nil {
@@ -61,8 +67,9 @@ func sendSms(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	//将验证码存入redis之中并且设置过期时间(mobile:verifiedCode)
-	err = service.Set(mobile, code, 2)
+
+	//将验证码存入redis之中并且设置过期时间(mobile+"code"-verifiedCode)
+	err = service.Set(mobile+"code", code, 2)
 	if err != nil {
 		fmt.Println("储存验证码错误", err)
 		tool.Failure(ctx, 200, "服务器错误")
