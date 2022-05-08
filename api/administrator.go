@@ -4,6 +4,7 @@ import (
 	"course-selection/model"
 	"course-selection/service"
 	"course-selection/tool"
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -28,7 +29,11 @@ func administratorLogin(ctx *gin.Context) {
 	}
 	err, pwd := service.AdministratorLogin(administrator)
 	if err != nil {
-		fmt.Println("高级管理", err)
+		if err == sql.ErrNoRows {
+			tool.Failure(ctx, 400, "账号错误")
+			return
+		}
+		fmt.Println("查询管理员密码错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
@@ -36,16 +41,31 @@ func administratorLogin(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "密码居然错了┭┮﹏┭┮")
 		return
 	}
+
+	err, token := service.CreateToken(administratorId, 200)
+	if err != nil {
+		fmt.Println("创建token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(administratorId, "token", token)
+	if err != nil {
+		fmt.Println("储存token失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	if auth == "" {
-		err, token := service.CreateToken(administratorId, 2)
+		//不授权长时间免密登录
+		err, refreshToken := service.CreateToken(administratorId, 500)
 		if err != nil {
-			fmt.Println("创建token失败", err)
+			fmt.Println("创建refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		err = service.HashSet("token", administratorId, token)
+		err = service.HashSet(administratorId, "refreshToken", refreshToken)
 		if err != nil {
-			fmt.Println("储存token失败", err)
+			fmt.Println("储存refreshToken失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
@@ -53,18 +73,19 @@ func administratorLogin(ctx *gin.Context) {
 		return
 	}
 
-	err, token := service.RememberStatus(administratorId, 5)
+	err, refreshToken := service.RememberStatus(administratorId, 1000)
 	if err != nil {
-		fmt.Println("创建token失败", err)
+		fmt.Println("创建refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.HashSet("token", administratorId, token)
+	err = service.HashSet(administratorId, "refreshToken", refreshToken)
 	if err != nil {
-		fmt.Println("储存token失败", err)
+		fmt.Println("储存refreshToken失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	tool.Success(ctx, 200, token)
 }
 
