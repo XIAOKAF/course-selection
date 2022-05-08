@@ -54,3 +54,15 @@ func ChooseCourse(choice model.Choice) error {
 	err := dao.ChooseCourse(choice)
 	return err
 }
+
+// JudgeTimeConflict 判断所选课程是否存在时间冲突
+func JudgeTimeConflict(selectedTimeArr []string, timeArr []string) bool {
+	sort.Strings(selectedTimeArr)
+	for _, v := range timeArr {
+		index := sort.SearchStrings(selectedTimeArr, v)
+		if index < len(selectedTimeArr) && selectedTimeArr[index] == v {
+			return true
+		}
+	}
+	return false
+}
