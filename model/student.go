@@ -1,8 +1,7 @@
 package model
 
 type Student struct {
-	StudentId   int `gorm:"primary_key"`
-	UnifiedCode string
+	StudentId   string
 	StudentName string
 	Gender      int
 	Grade       string
@@ -11,5 +10,5 @@ type Student struct {
 	Mobile      string
 	Department  string
 	Major       string
-	Image       string
+	RuleId      string
 }
