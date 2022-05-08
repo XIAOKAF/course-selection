@@ -450,48 +450,59 @@ func selection(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err, courseNumberArr := service.HKeys(tokenClaims.UserId + "teaching")
+	mobile, err := service.HashGet(tokenClaims.Identify, "mobile")
+	if err != nil {
+		fmt.Println("查询电话号码失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	//查询所选课程编号
+	err, courseNumberArr := service.HKeys(mobile)
 	if err != nil {
 		fmt.Println("查询课程编号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err, classNumberArr := service.HVals(tokenClaims.UserId + "teaching")
-	if err != nil {
-		fmt.Println("查询教学班失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+
 	teaching := model.Selection{}
 	var teachingSum []model.Selection
 	for i, v := range courseNumberArr {
 		teaching.CourseNumber = v
-		teaching.TeachingClass = classNumberArr[i]
-		teaching.CourseCredit, err = service.HashGet(tokenClaims.UserId, "courseCredit")
+		teaching.CourseCredit, err = service.HashGet(v, "courseCredit")
 		if err != nil {
 			fmt.Println("查询课程学分失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teaching.CourseType, err = service.HashGet(tokenClaims.UserId, "courseType")
+		teaching.CourseType, err = service.HashGet(v, "courseType")
 		if err != nil {
 			fmt.Println("查询课程类型失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teaching.SetTime, err = service.HashGet(v+"teaching", classNumberArr[i])
+		//获取教学班编号
+		teachingClassNumber, err := service.HashGet(mobile, v)
+		if err != nil {
+			fmt.Println("查询教学班编号失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//获取教学班开设时间
+		teaching.SetTime, err = service.HashGet(teachingClassNumber, "setTime")
 		if err != nil {
 			fmt.Println("查询教学班开设时间失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teacherNumber, err := service.HashGet(v+"teacher", classNumberArr[i])
+		//查询教师工号
+		workNumber, err := service.HashGet(teachingClassNumber, "workNumber")
 		if err != nil {
 			fmt.Println("查询教师编号失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teaching.TeacherName, err = service.HashGet(teacherNumber, "teacherName")
+		//获取教师姓名
+		teaching.TeacherName, err = service.HashGet(workNumber, "teacherName")
 		if err != nil {
 			fmt.Println("查询教师姓名失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
@@ -499,6 +510,7 @@ func selection(ctx *gin.Context) {
 		}
 		teachingSum[i] = teaching
 	}
+
 	tool.Success(ctx, http.StatusOK, teachingSum)
 }
 
