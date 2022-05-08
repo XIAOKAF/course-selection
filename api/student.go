@@ -16,28 +16,40 @@ import (
 )
 
 func studentRegister(ctx *gin.Context) {
-	unifiedCode := ctx.PostForm("unifiedCode")
+	studentId := ctx.PostForm("userId")
 	password := ctx.PostForm("password")
-	if unifiedCode == "" || password == "" {
+	if studentId == "" || password == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
 	//查询该学生是否是本校学生，是则返回true，不是则返回false
-	flag, err, pwd := service.SelectUnifiedCode(unifiedCode)
+	mobile, err := service.HashGet("student", studentId)
 	if err != nil {
-		fmt.Println("查询统一验证码错误", err)
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "学号错误")
+			return
+		}
+		fmt.Println("查询学生是否存在错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "是本校学生(⊙o⊙)吗？")
+	pwd, err := service.HashGet(studentId, "password")
+	if err != nil {
+		fmt.Println("查询密码错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
 	if pwd != password {
 		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
 		return
 	}
-	tool.Success(ctx, 200, "亲爱的"+unifiedCode+"，你已经成功激活账户啦！o(*￣▽￣*)ブ")
+	err = service.HashSet(mobile, "studentId", studentId)
+	if err != nil {
+		fmt.Println("储存学生信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	tool.Success(ctx, 200, "注册成功")
 }
 
 func studentLogin(ctx *gin.Context) {
