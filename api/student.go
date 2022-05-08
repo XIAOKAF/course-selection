@@ -10,7 +10,6 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -221,14 +220,22 @@ func selectInfo(ctx *gin.Context) {
 	}
 
 	//从redis中获取具体的信息
-	studentName, err := service.HashGet(tokenClaims.UserId, "studentName")
+	studentName, err := service.HashGet(tokenClaims.Identify, "studentName")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生姓名失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	gender, err := service.HashGet(tokenClaims.UserId, "gender")
+	gender, err := service.HashGet(tokenClaims.Identify, "gender")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生性别失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
@@ -239,47 +246,43 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	grade, err := service.HashGet(tokenClaims.UserId, "grade")
+	grade, err := service.HashGet(tokenClaims.Identify, "grade")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生年级失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	class, err := service.HashGet(tokenClaims.UserId, "class")
+	class, err := service.HashGet(tokenClaims.Identify, "class")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生班级失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	department, err := service.HashGet(tokenClaims.UserId, "department")
+	department, err := service.HashGet(tokenClaims.Identify, "department")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生院系失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	major, err := service.HashGet(tokenClaims.UserId, "major")
+	major, err := service.HashGet(tokenClaims.Identify, "major")
 	if err != nil {
+		if err == redis.Nil {
+			tool.Failure(ctx, 400, "token错误")
+			return
+		}
 		fmt.Println("获取学生专业失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-
-	//从腾讯云对象储存内获取头像
-	u, _ := url.Parse("https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com")
-	b := &cos.BaseURL{BucketURL: u}
-	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  " ",
-			SecretKey: " ",
-		},
-	})
-	file := "localfile"
-	opt := &cos.MultiDownloadOptions{
-		ThreadPoolSize: 5,
-	}
-	_, err = client.Object.Download(ctx, tokenClaims.UserId, file, opt)
-	if err != nil {
-		fmt.Println("获取图片错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
