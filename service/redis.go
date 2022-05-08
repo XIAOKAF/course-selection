@@ -66,6 +66,10 @@ func HDel(hashTableName string, filedNameArr []string) error {
 	return err
 }
 
+func HDelSingle(key string, filed string) error {
+	return dao.HDelSingle(key, filed)
+}
+
 func SetAdd(key string, member interface{}) error {
 	err := dao.SetAdd(key, member)
 	return err

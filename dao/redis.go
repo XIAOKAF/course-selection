@@ -77,6 +77,12 @@ func HDel(key string, fields []string) error {
 	return nil
 }
 
+// HDelSingle 删除哈希表中的一个值
+func HDelSingle(key string, filed string) error {
+	result := RDB.HDel(key, filed)
+	return result.Err()
+}
+
 // SetAdd 像列表中插入数据
 func SetAdd(key string, member interface{}) error {
 	result := RDB.SAdd(key, member)
