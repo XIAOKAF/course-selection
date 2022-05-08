@@ -27,7 +27,7 @@ func InitEngine() {
 		administratorGroup.POST("/spiderMan", spiderMan)               //导入学生信息
 		administratorGroup.POST("/createCurriculum", createCurriculum) //开设新的课程
 		administratorGroup.POST("/detailCurriculum", detailCurriculum) //开设教学班
-		administratorGroup.POST("/cancel", cancel)                     //注销学生账号
+		administratorGroup.DELETE("/cancel", cancel)                   //注销学生账号
 	}
 
 	//学生接口
