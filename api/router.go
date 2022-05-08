@@ -35,15 +35,13 @@ func InitEngine() {
 	engine.POST("/loginByStudentId", loginByStudentId) //密码登录
 	studentGroup := engine.Group("/student")
 	{
-		studentGroup.Use(parseToken)                                 //解析token
-		studentGroup.POST("/changePwdByCode", changePwdByCode)       //验证码修改密码
-		studentGroup.POST("/updateMobile", updateMobile)             //更新电话号码
-		studentGroup.POST("/checkCodeForUpdate", checkCodeForUpdate) //更新电话号码时校验验证码
-		studentGroup.POST("/updateAvatar", updateAvatar)             //更新头像
-		studentGroup.GET("/selectInfo", selectInfo)                  //查询学生信息
-		studentGroup.POST("chooseCourse", chooseCourse)              //选课
-		studentGroup.GET("/selection", selection)                    //学生查询自己的选课信息
-		studentGroup.POST("/quit", quit)                             //学生退出班级
+		studentGroup.Use(parseToken)                           //解析token
+		studentGroup.POST("/changePwdByCode", changePwdByCode) //验证码修改密码
+		studentGroup.POST("/updateAvatar", updateAvatar)       //更新头像
+		studentGroup.GET("/selectInfo", selectInfo)            //查询学生信息
+		studentGroup.POST("/chooseCourse", chooseCourse)       //选课
+		studentGroup.GET("/selection", selection)              //学生查询自己的选课信息
+		studentGroup.DELETE("/quit", quit)                     //学生退出班级
 	}
 
 	//教师接口
