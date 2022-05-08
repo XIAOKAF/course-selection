@@ -172,43 +172,37 @@ func changePwdByCode(ctx *gin.Context) {
 
 //更新头像
 func updateAvatar(ctx *gin.Context) {
-	//确认登录状态
 	tokenString := ctx.Request.Header.Get("token")
 	tokenClaims, err := service.ParseToken(tokenString)
 	if err != nil {
-		fmt.Println("token解析失败", err)
+		fmt.Println("解析token失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	//获取头像文件
-	avatar, err := os.Open("avatar")
+
+	bucket, err := service.ParseBucket()
 	if err != nil {
-		fmt.Println("获取头像错误", err)
+		fmt.Println("解析储存桶配置文件错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	u, err := url.Parse("https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com")
-	b := &cos.BaseURL{BatchURL: u}
-	client := cos.NewClient(b, &http.Client{
+	u, err := url.Parse(bucket.Url)
+	if err != nil {
+		fmt.Println("解析url错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	b := &cos.BaseURL{BucketURL: u}
+	c := cos.NewClient(b, &http.Client{
 		Transport: &cos.AuthorizationTransport{
-			SecretID:  " ",
-			SecretKey: " ",
+			SecretID:  bucket.SecretId,
+			SecretKey: bucket.SecretKey,
 		},
 	})
-	opt := &cos.ObjectPutOptions{
-		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
-			ContentType: "ipj",
-		},
-	}
-	_, err = client.Object.Delete(ctx, tokenClaims.UserId)
+	filePath := ctx.PostForm("filePath")
+	_, err = c.Object.PutFromFile(ctx, tokenClaims.Identify, filePath, nil)
 	if err != nil {
-		fmt.Println("删除原有头像错误", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	_, err = client.Object.Put(ctx, tokenClaims.UserId, avatar, opt)
-	if err != nil {
-		fmt.Println("储存头像错误", err)
+		fmt.Println("上传头像失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
