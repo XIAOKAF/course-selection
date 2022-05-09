@@ -6,6 +6,7 @@ import (
 	"course-selection/tool"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"strconv"
 )
 
@@ -24,36 +25,41 @@ func createCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	//在redis中查询该课程是否已经存在
-	//存在则不允许再创建
-	//课程存在返回true，反之则false
-	err, flag := service.SIsMember("course", courseNumber)
-	if err != nil {
-		fmt.Println("查询课程编号是否存在失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	if flag {
-		tool.Failure(ctx, 400, "该课程已经存在")
+	if courseNumber[0:1] != "c" {
+		tool.Failure(ctx, 400, "课程编号格式错误")
 		return
 	}
 
+	//查询课程是否已经存在
+	_, err := service.HashGet("course", courseNumber)
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询课程编号失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	if err != redis.Nil {
+		tool.Failure(ctx, 400, "课程已经创建")
+		return
+	}
+
+	//课程类型1表示选修，2表示必修
 	classCredit, err := strconv.ParseFloat(courseCredit, 32)
 	if err != nil {
 		fmt.Println("课程编号转换数据类型错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	//课程类型1表示选修，2表示必修
 	classType, err := strconv.Atoi(courseType)
 	if err != nil {
 		fmt.Println("课程类型转换数据类型失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	course := model.Course{
 		CourseNumber:     courseNumber,
 		CourseName:       courseName,
+		CourseGrade:      courseGrade,
 		CourseDepartment: courseDepartment,
 		CourseCredit:     classCredit,
 		CourseType:       classType,
@@ -68,12 +74,13 @@ func createCurriculum(ctx *gin.Context) {
 		return
 	}
 	//将信息存入redis
-	err = service.SetAdd("course", courseNumber)
+	err = service.HashSet("course", courseNumber, courseName)
 	if err != nil {
-		fmt.Println("将课程信息存入redis失败", err)
+		fmt.Println("将课程编号存入redis失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	err = service.RCreateCourse(course)
 	if err != nil {
 		fmt.Println("将课程信息存入redis失败", err)

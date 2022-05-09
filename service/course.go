@@ -22,6 +22,7 @@ func RCreateCourse(course model.Course) error {
 	courseMap := make(map[string]interface{})
 	courseMap["courseName"] = course.CourseName
 	courseMap["courseDepartment"] = course.CourseDepartment
+	courseMap["courseGrade"] = course.CourseGrade
 	courseMap["courseCredit"] = course.CourseCredit
 	courseMap["courseType"] = course.CourseType
 	courseMap["duration"] = course.Duration
