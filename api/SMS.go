@@ -81,11 +81,11 @@ func sendSms(ctx *gin.Context) {
 //校验验证码
 func checkSms(ctx *gin.Context) {
 	mobile := ctx.PostForm("mobile")
-	verifyCode := ctx.PostForm("verifyCode")
-	result, duration, err := service.CheckSms(mobile)
+	code := ctx.PostForm("code")
+	result, duration, err := service.CheckSms(mobile + "code")
 	if err != nil {
 		if err == redis.Nil {
-			tool.Failure(ctx, 400, "验证码已过期或电话号码错误")
+			tool.Failure(ctx, 400, "验证码已过期")
 			return
 		}
 		fmt.Println("查询验证码失败", err)
@@ -96,7 +96,7 @@ func checkSms(ctx *gin.Context) {
 	if duration == -1 {
 		fmt.Println("验证码没有设置过期时间")
 		//删除电话号码-验证码键值对
-		err = service.Del(mobile)
+		err = service.Del(mobile + "code")
 		if err != nil {
 			fmt.Println("删除验证码错误且验证码未设置过期时间", err)
 			tool.Failure(ctx, 500, "服务器错误")
@@ -105,7 +105,7 @@ func checkSms(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if verifyCode != result {
+	if code != result {
 		tool.Failure(ctx, 400, "验证码错误")
 		return
 	}
