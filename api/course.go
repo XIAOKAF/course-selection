@@ -100,47 +100,51 @@ func detailCurriculum(ctx *gin.Context) {
 	if courseNumber == "" || teachingClass == "" || teacherNumber == "" || setTime == "" {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 	}
-	//在redis中查询该课程是否存在
-	err, flag := service.SelectCourse(courseNumber)
-	if err != nil {
-		fmt.Println("查询教学班失败", err)
+	//查询课程是否存在
+	_, err := service.HashGet("course", courseNumber)
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询课程编号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
 
-	if !flag {
-		tool.Failure(ctx, 400, "该课程不存在")
-		return
-	}
-	//在MySQL中查询该教师是否存在
-	flag, err = service.SelectTeacher(teacherNumber)
-	if err != nil {
-		fmt.Println("查询教师编号失败", err)
+	//查询教师是否存在
+	teacherId, err := service.HashGet(teacherNumber, "teacherId")
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询教师工号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "教师不存在")
+
+	//查询教学班是否存在
+	err, classArr := service.HVals("course")
+	flag := service.IsClassExist(classArr, teachingClass)
+	if flag {
+		tool.Failure(ctx, 400, "教学班已经存在")
 		return
 	}
-	teaching := model.Teaching{
-		CourseNumber:  courseNumber,
-		TeachingClass: teachingClass,
-		SetTime:       setTime,
-	}
+
 	//将数据存入redis
-	err = service.SetAdd(teacherNumber, teachingClass)
+
+	err = service.HashSet(courseNumber, teachingClass, teacherNumber)
 	if err != nil {
-		fmt.Println("将教学信息存入redis失败", err)
+		fmt.Println("将教学班信息存入课程信息中失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.RDetailsCourse(teaching)
+	err = service.HashSet(teachingClass, "courseNumber", courseNumber)
 	if err != nil {
-		fmt.Println("将教学信息存入redis失败", err)
+		fmt.Println("将课程编号存入教学班信息失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	err = service.HashSet(teacherId, teachingClass, courseNumber)
+	if err != nil {
+		fmt.Println("将教学班信息存入教师信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	tool.Success(ctx, 200, "教学信息设置成功")
 }
 
