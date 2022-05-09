@@ -1,13 +1,11 @@
 package model
 
 type Course struct {
-	CourseId         string
 	CourseNumber     string
 	CourseName       string
 	CourseDepartment string
 	CourseCredit     float64
 	CourseType       int
-	TeachingClass    string
 	CourseGrade      string
 	Duration         string
 }
@@ -33,4 +31,11 @@ type Selection struct {
 	SetTime       string
 	CourseCredit  string
 	CourseType    string
+}
+
+type TeachingClassInfo struct {
+	Course
+	TeachingClassNumber string
+	SetTime             string
+	StudentSum          int
 }
