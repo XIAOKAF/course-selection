@@ -39,19 +39,6 @@ func RDetailsCourse(teaching model.Teaching) error {
 	return err
 }
 
-// IsRepeated 判断时间是否有重叠的部分
-func IsRepeated(selectArr, choice []string) bool {
-	//有时间冲突则返回true，反之false
-	for _, value := range selectArr {
-		for _, v := range choice {
-			if value == v {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // JudgeTimeConflict 判断所选课程是否存在时间冲突
 func JudgeTimeConflict(selectedTimeArr []string, timeArr []string) bool {
 	sort.Strings(selectedTimeArr)
@@ -60,6 +47,16 @@ func JudgeTimeConflict(selectedTimeArr []string, timeArr []string) bool {
 		if index < len(selectedTimeArr) && selectedTimeArr[index] == v {
 			return true
 		}
+	}
+	return false
+}
+
+// IsClassExist 判断教学班是否已经被创建
+func IsClassExist(classArr []string, class string) bool {
+	sort.Strings(classArr)
+	index := sort.SearchStrings(classArr, class)
+	if index < len(classArr) && classArr[index] == class {
+		return true
 	}
 	return false
 }
