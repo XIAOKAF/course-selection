@@ -196,57 +196,87 @@ func studentsSelection(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err, flag := service.SIsMember(tokenClaims.UserId, teachingClass)
+	//教师账号
+	teacherId, err := service.HashGet(tokenClaims.Identify, "teacherId")
 	if err != nil {
-		fmt.Println("检索教师是否教该教学班失败", err)
+		fmt.Println("查询教师账号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	if !flag {
-		tool.Failure(ctx, 400, "保留彼此的空间，不打扰是你的温柔")
-		return
-	}
-	//获取选课学生
-	err, codeArr := service.HKeys(teachingClass)
+	//课程编号
+	_, err = service.HashGet(teacherId, teachingClass)
 	if err != nil {
-		fmt.Println("查询所有选课学生失败", err)
+		fmt.Println("查询课程编号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	var studentIdMap map[string]string
+	studentIdMap = make(map[string]string)
+	err, studentIdMap = service.HashGetAll(teachingClass)
+	if err != nil {
+		fmt.Println("查询选课学生失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	student := model.Student{}
 	var studentArr []model.Student
-	for i, v := range codeArr {
-		student.StudentName, err = service.HashGet(v, "studentName")
-		if err != nil {
-			fmt.Println("获取学生姓名错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
+	flag := true
+	i := 0
+	for k := range studentIdMap {
+		if k[0:1] == "c" {
+		} else {
+			//学生姓名
+			student.StudentName, err = service.HashGet(k, "studentName")
+			if err != nil {
+				fmt.Println("获取学生姓名错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			//学生性别
+			sex, err := service.HashGet(k, "gender")
+			if err != nil {
+				fmt.Println("获取学生性别错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			student.Gender, err = strconv.Atoi(sex)
+			if err != nil {
+				fmt.Println("string转int错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			//学生院系
+			student.Department, err = service.HashGet(k, "department")
+			if err != nil {
+				fmt.Println("获取学生院系错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			//学生专业
+			student.Major, err = service.HashGet(k, "major")
+			if err != nil {
+				fmt.Println("获取学生专业错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			//学生年级
+			student.Grade, err = service.HashGet(k, "grade")
+			if err != nil {
+				fmt.Println("查询学生年级失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				flag = false
+			}
+			studentArr[i] = student
 		}
-		sex, err := service.HashGet(v, "gender")
-		if err != nil {
-			fmt.Println("获取学生性别错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
+		if !flag {
+			break
 		}
-		student.Gender, err = strconv.Atoi(sex)
-		if err != nil {
-			fmt.Println("string转int错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		student.Department, err = service.HashGet(v, "department")
-		if err != nil {
-			fmt.Println("获取学生院系错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		student.Major, err = service.HashGet(v, "major")
-		if err != nil {
-			fmt.Println("获取学生专业错误", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		studentArr[i] = student
+		i++
 	}
+	if !flag {
+		return
+	}
+
 	tool.Success(ctx, http.StatusOK, studentArr)
 }
