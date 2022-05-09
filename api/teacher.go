@@ -97,32 +97,89 @@ func getTeachingClass(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err, classArr := service.SetGet(tokenClaims.UserId)
+	teacherId, err := service.HashGet("teacher", tokenClaims.Identify)
 	if err != nil {
-		fmt.Println("查询教师所带教学班失败", err)
+		fmt.Println("查询教师账号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	teaching := model.Teaching{}
-	var teachingArr []model.Teaching
-	for i, v := range classArr {
-		//获取教学班编号对应的课程编号
-		teaching.CourseNumber, err = service.HashGet(tokenClaims.UserId+"teaching", v)
+	err, teachingArr := service.HVals(teacherId)
+	if err != nil {
+		fmt.Println("查询教师所带教学班失败")
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
+	var teachingClassInfo model.TeachingClassInfo
+	var infoArr []model.TeachingClassInfo
+	for i, v := range teachingArr {
+		teachingClassInfo.TeachingClassNumber = v
+		//课程id
+		teachingClassInfo.Course.CourseNumber, err = service.HashGet(v, "courseNumber")
 		if err != nil {
 			fmt.Println("查询课程编号失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		//获取教学班开设的时间
-		teaching.SetTime, err = service.HashGet(v+"teaching", "setTime")
+		//课程名称
+		teachingClassInfo.Course.CourseName, err = service.HashGet(teachingClassInfo.CourseNumber, "courseName")
 		if err != nil {
-			fmt.Println("获取教学班开设时间失败", err)
+			fmt.Println("查询课程名称错误", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teachingArr[i] = teaching
+		//课程类型
+		variety, err := service.HashGet(teachingClassInfo.CourseNumber, "courseType")
+		if err != nil {
+			fmt.Println("查询课程类型失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		teachingClassInfo.CourseType, err = strconv.Atoi(variety)
+		if err != nil {
+			fmt.Println("类型转换失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//课程院系
+		teachingClassInfo.CourseDepartment, err = service.HashGet(teachingClassInfo.CourseNumber, "courseDepartment")
+		if err != nil {
+			fmt.Println("查询课程所属院系失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//课程年级
+		teachingClassInfo.CourseGrade, err = service.HashGet(teachingClassInfo.CourseNumber, "courseGrade")
+		if err != nil {
+			fmt.Println("查询课程所属年级失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//课程时间
+		teachingClassInfo.Duration, err = service.HashGet(teachingClassInfo.CourseNumber, "duration")
+		if err != nil {
+			fmt.Println("查询课程时长失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//教学班开设时间
+		teachingClassInfo.SetTime, err = service.HashGet(v, "setTime")
+		if err != nil {
+			fmt.Println("查询教学班开设时间失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		//选课人数
+		err, studentArr := service.HKeys(v)
+		if err != nil {
+			fmt.Println("查询选课学生失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		teachingClassInfo.StudentSum = len(studentArr) - 1
+		infoArr[i] = teachingClassInfo
 	}
-	tool.Success(ctx, http.StatusOK, teachingArr)
+	tool.Success(ctx, http.StatusOK, infoArr)
 }
 
 //获取选课学生信息
