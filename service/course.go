@@ -3,6 +3,7 @@ package service
 import (
 	"course-selection/dao"
 	"course-selection/model"
+	"sort"
 )
 
 // SelectCourse 查询课程是否已经存在
@@ -48,11 +49,6 @@ func IsRepeated(selectArr, choice []string) bool {
 		}
 	}
 	return false
-}
-
-func ChooseCourse(choice model.Choice) error {
-	err := dao.ChooseCourse(choice)
-	return err
 }
 
 // JudgeTimeConflict 判断所选课程是否存在时间冲突
