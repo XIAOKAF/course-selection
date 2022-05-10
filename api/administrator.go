@@ -139,7 +139,19 @@ func inviteTeacher(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "必要字段不能为空")
 		return
 	}
-	err := service.HashSet(teacherNumber, "teacherName", teacherName)
+	teacher := model.Teacher{
+		WorkNumber:  teacherNumber,
+		TeacherId:   teacherId,
+		TeacherName: teacherName,
+		RuleLevel:   2,
+	}
+	err := service.InsertTeacher(teacher)
+	if err != nil {
+		fmt.Println("存储教师信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(teacherNumber, "teacherName", teacherName)
 	if err != nil {
 		fmt.Println("存储教师信息失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
@@ -151,5 +163,6 @@ func inviteTeacher(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	err = service.HashSet(teacherNumber, "roleLevel", "teacher")
 	tool.Success(ctx, 200, "successfully!")
 }
