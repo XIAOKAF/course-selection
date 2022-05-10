@@ -345,7 +345,7 @@ func chooseCourse(ctx *gin.Context) {
 	}
 
 	//查询课程
-	_, err = service.HashGet("curriculum", courseNumber)
+	_, err = service.HashGet("course", courseNumber)
 	if err != nil {
 		if err == redis.Nil {
 			tool.Failure(ctx, 400, "课程不存在")
@@ -357,7 +357,7 @@ func chooseCourse(ctx *gin.Context) {
 	}
 
 	//查询教学班
-	_, err = service.HashGet(courseNumber, "teachingClassNumber")
+	_, err = service.HashGet(courseNumber, teachingClass)
 	if err != nil {
 		if err == redis.Nil {
 			tool.Failure(ctx, 400, "教学班不存在")
@@ -439,6 +439,7 @@ func chooseCourse(ctx *gin.Context) {
 			return
 		}
 		tool.Success(ctx, 200, "选课成功")
+		return
 	}
 	tool.Failure(ctx, 400, "你已选择过该课程")
 }
