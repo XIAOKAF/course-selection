@@ -234,7 +234,7 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	gender, err := service.HashGet(tokenClaims.Identify, "gender")
+	g, err := service.HashGet(tokenClaims.Identify, "gender")
 	if err != nil {
 		if err == redis.Nil {
 			tool.Failure(ctx, 400, "token错误")
@@ -471,48 +471,50 @@ func selection(ctx *gin.Context) {
 	teaching := model.Selection{}
 	var teachingSum []model.Selection
 	for i, v := range courseNumberArr {
-		teaching.CourseNumber = v
-		teaching.CourseCredit, err = service.HashGet(v, "courseCredit")
-		if err != nil {
-			fmt.Println("查询课程学分失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
+		if v != "studentId" {
+			teaching.CourseNumber = v
+			teaching.CourseCredit, err = service.HashGet(v, "courseCredit")
+			if err != nil {
+				fmt.Println("查询课程学分失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			teaching.CourseType, err = service.HashGet(v, "courseType")
+			if err != nil {
+				fmt.Println("查询课程类型失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//获取教学班编号
+			teachingClassNumber, err := service.HashGet(mobile, v)
+			if err != nil {
+				fmt.Println("查询教学班编号失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//获取教学班开设时间
+			teaching.SetTime, err = service.HashGet(teachingClassNumber, "setTime")
+			if err != nil {
+				fmt.Println("查询教学班开设时间失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//查询教师工号
+			workNumber, err := service.HashGet(teachingClassNumber, "workNumber")
+			if err != nil {
+				fmt.Println("查询教师编号失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//获取教师姓名
+			teaching.TeacherName, err = service.HashGet(workNumber, "teacherName")
+			if err != nil {
+				fmt.Println("查询教师姓名失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			teachingSum[i] = teaching
 		}
-		teaching.CourseType, err = service.HashGet(v, "courseType")
-		if err != nil {
-			fmt.Println("查询课程类型失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		//获取教学班编号
-		teachingClassNumber, err := service.HashGet(mobile, v)
-		if err != nil {
-			fmt.Println("查询教学班编号失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		//获取教学班开设时间
-		teaching.SetTime, err = service.HashGet(teachingClassNumber, "setTime")
-		if err != nil {
-			fmt.Println("查询教学班开设时间失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		//查询教师工号
-		workNumber, err := service.HashGet(teachingClassNumber, "workNumber")
-		if err != nil {
-			fmt.Println("查询教师编号失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		//获取教师姓名
-		teaching.TeacherName, err = service.HashGet(workNumber, "teacherName")
-		if err != nil {
-			fmt.Println("查询教师姓名失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-		teachingSum[i] = teaching
 	}
 
 	tool.Success(ctx, http.StatusOK, teachingSum)
