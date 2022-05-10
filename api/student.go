@@ -199,6 +199,10 @@ func updateAvatar(ctx *gin.Context) {
 		},
 	})
 	filePath := ctx.PostForm("filePath")
+	if filePath == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
 	_, err = c.Object.PutFromFile(ctx, tokenClaims.Identify, filePath, nil)
 	if err != nil {
 		fmt.Println("上传头像失败", err)
