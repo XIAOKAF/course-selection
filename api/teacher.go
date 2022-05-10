@@ -176,7 +176,7 @@ func getTeachingClass(ctx *gin.Context) {
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teachingClassInfo.StudentSum = len(studentArr) - 1
+		teachingClassInfo.StudentSum = len(studentArr) - 2
 		infoArr[i] = teachingClassInfo
 	}
 	tool.Success(ctx, http.StatusOK, infoArr)
