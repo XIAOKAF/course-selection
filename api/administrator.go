@@ -130,3 +130,26 @@ func cancel(ctx *gin.Context) {
 
 	tool.Success(ctx, http.StatusOK, "已经将该学生删除")
 }
+
+func inviteTeacher(ctx *gin.Context) {
+	teacherNumber := ctx.PostForm("teacherNumber")
+	teacherId := ctx.PostForm("teacherId")
+	teacherName := ctx.PostForm("teacherName")
+	if teacherName == "" || teacherId == "" || teacherNumber == "" {
+		tool.Failure(ctx, 400, "必要字段不能为空")
+		return
+	}
+	err := service.HashSet(teacherNumber, "teacherName", teacherName)
+	if err != nil {
+		fmt.Println("存储教师信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(teacherNumber, "teacherId", teacherId)
+	if err != nil {
+		fmt.Println("存储教师信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	tool.Success(ctx, 200, "successfully!")
+}
