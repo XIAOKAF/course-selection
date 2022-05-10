@@ -17,28 +17,6 @@ func CreateCourse(course model.Course) error {
 	return err
 }
 
-// RCreateCourse redis插入新的课程信息
-func RCreateCourse(course model.Course) error {
-	courseMap := make(map[string]interface{})
-	courseMap["courseName"] = course.CourseName
-	courseMap["courseDepartment"] = course.CourseDepartment
-	courseMap["courseGrade"] = course.CourseGrade
-	courseMap["courseCredit"] = course.CourseCredit
-	courseMap["courseType"] = course.CourseType
-	courseMap["duration"] = course.Duration
-	err := dao.HashSet(course.CourseNumber+"detail", courseMap)
-	return err
-}
-
-func RDetailsCourse(teaching model.Teaching) error {
-	teachingMap := make(map[string]interface{})
-	teachingMap["courseNumber"] = teaching.CourseNumber
-	teachingMap["setTime"] = teaching.SetTime
-	teachingMap["teacherNumber"] = teaching.TeacherNumber
-	err := dao.HashSet(teaching.TeachingClass, teachingMap)
-	return err
-}
-
 // JudgeTimeConflict 判断所选课程是否存在时间冲突
 func JudgeTimeConflict(selectedTimeArr []string, timeArr []string) bool {
 	sort.Strings(selectedTimeArr)

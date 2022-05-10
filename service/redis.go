@@ -6,7 +6,7 @@ import (
 )
 
 func Set(key string, val string, expiration time.Duration) error {
-	err := dao.Set(key, val, expiration)
+	err := dao.Set(key, val, expiration*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -46,11 +46,6 @@ func HashGetAll(hashTableName string) (error, map[string]string) {
 	return err, result
 }
 
-func HExists(hashTableName string, filedName string) (error, bool) {
-	err, flag := dao.HExists(hashTableName, filedName)
-	return err, flag
-}
-
 func HKeys(hashTableName string) (error, []string) {
 	err, keys := dao.HKeys(hashTableName)
 	return err, keys
@@ -70,22 +65,7 @@ func HDelSingle(key string, filed string) error {
 	return dao.HDelSingle(key, filed)
 }
 
-func SetAdd(key string, member interface{}) error {
-	err := dao.SetAdd(key, member)
-	return err
-}
-
-func SetGet(setName string) (error, []string) {
-	err, members := dao.SetGet(setName)
-	return err, members
-}
-
 func SScan(key string, cursor uint64, match string, count int64) []string {
 	val, _ := dao.SScan(key, cursor, match, count)
 	return val
-}
-
-func SIsMember(key string, member interface{}) (error, bool) {
-	err, flag := dao.SIsMember(key, member)
-	return err, flag
 }
