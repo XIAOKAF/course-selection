@@ -150,41 +150,90 @@ func detailCurriculum(ctx *gin.Context) {
 
 //展示所有的课程信息
 func getAllCourse(ctx *gin.Context) {
-	err, members := service.SetGet("course")
+	//获取课程编号
+	err, courseArr := service.HKeys("course")
 	if err != nil {
 		fmt.Println("从redis中获取课程编号失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	var courseDetails model.Course
-	var courseDetailsArr []model.Course
-	for _, val := range members {
-		err, result := service.HashGetAll(val)
+	var courseDetails model.ClassDetails
+	var courseDetailsArr []model.ClassDetails
+	for k, v := range courseArr {
+		//获取课程对应的所有教学班编号及对应教师编号
+		err, teachingClassArr := service.HashGetAll(v)
 		if err != nil {
 			fmt.Println("查询课程详情失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		courseDetails.CourseNumber = result["courseNumber"]
-		courseDetails.CourseName = result["courseName"]
-		courseDetails.CourseDepartment = result["courseDepartment"]
-		credit, err := strconv.ParseFloat(result["courseCredit"], 64)
-		if err != nil {
-			fmt.Println("学分数据类型转换失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
+		var teacherNumber string
+		//教学班以及教师编号
+		for courseDetails.TeachingClassNumber, teacherNumber = range teachingClassArr {
+			//课程编号
+			courseDetails.CourseNumber, err = service.HashGet(courseDetails.TeachingClassNumber, "courseNumber")
+			if err != nil {
+				fmt.Println("查询课程编号失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//教师名字
+			courseDetails.TeacherName, err = service.HashGet(teacherNumber, "teacherName")
+			if err != nil {
+				fmt.Println("查询教师姓名失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//课程名称
+			courseDetails.CourseName, err = service.HashGet(courseDetails.CourseNumber, "courseName")
+			if err != nil {
+				fmt.Println("查询课程名称错误", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//课程类型
+			variety, err := service.HashGet(courseDetails.CourseNumber, "courseType")
+			if err != nil {
+				fmt.Println("查询课程类型失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			courseDetails.CourseType, err = strconv.Atoi(variety)
+			if err != nil {
+				fmt.Println("类型转换失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//课程院系
+			courseDetails.CourseDepartment, err = service.HashGet(courseDetails.CourseNumber, "courseDepartment")
+			if err != nil {
+				fmt.Println("查询课程所属院系失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//课程年级
+			courseDetails.CourseGrade, err = service.HashGet(courseDetails.CourseNumber, "courseGrade")
+			if err != nil {
+				fmt.Println("查询课程所属年级失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//课程时间
+			courseDetails.Duration, err = service.HashGet(courseDetails.CourseNumber, "duration")
+			if err != nil {
+				fmt.Println("查询课程时长失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
+			//教学班开设时间
+			courseDetails.SetTime, err = service.HashGet(courseDetails.TeachingClassNumber, "setTime")
+			if err != nil {
+				fmt.Println("查询教学班开设时间失败", err)
+				tool.Failure(ctx, 500, "服务器错误")
+				return
+			}
 		}
-		courseDetails.CourseCredit = credit
-		classType, err := strconv.Atoi(result["courseType"])
-		if err != nil {
-			fmt.Println("课程类型数据类型转换失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
-
-		courseDetails.CourseType = classType
-		courseDetails.Duration = result["duration"]
-		courseDetailsArr = append(courseDetailsArr, courseDetails)
+		courseDetailsArr[k] = courseDetails
 	}
 	tool.Success(ctx, 200, courseDetailsArr)
 }
