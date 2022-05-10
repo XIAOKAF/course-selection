@@ -125,7 +125,6 @@ func detailCurriculum(ctx *gin.Context) {
 	}
 
 	//将数据存入redis
-
 	err = service.HashSet(courseNumber, teachingClass, teacherNumber)
 	if err != nil {
 		fmt.Println("将教学班信息存入课程信息中失败", err)
