@@ -3,7 +3,7 @@ package model
 type Student struct {
 	StudentId   string
 	StudentName string
-	Gender      int
+	Gender      string
 	Grade       string
 	Class       string
 	Password    string

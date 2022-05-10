@@ -10,7 +10,6 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -244,12 +243,7 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	g, err := strconv.Atoi(gender)
-	if err != nil {
-		fmt.Println("string转int失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+
 	grade, err := service.HashGet(tokenClaims.Identify, "grade")
 	if err != nil {
 		if err == redis.Nil {
@@ -260,6 +254,7 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+
 	class, err := service.HashGet(tokenClaims.Identify, "class")
 	if err != nil {
 		if err == redis.Nil {
@@ -292,12 +287,14 @@ func selectInfo(ctx *gin.Context) {
 	}
 
 	student := model.Student{
+		StudentId:   tokenClaims.Identify,
 		StudentName: studentName,
 		Gender:      g,
 		Grade:       grade,
 		Class:       class,
 		Department:  department,
 		Major:       major,
+		RuleId:      "student",
 	}
 	tool.Success(ctx, 200, student)
 }
