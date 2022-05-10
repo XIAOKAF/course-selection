@@ -112,6 +112,13 @@ func createCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
+	err = service.HashSet(courseNumber, "courseCredit", courseCredit)
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	tool.Success(ctx, 200, "成功创建课程")
 }
 
@@ -168,7 +175,12 @@ func detailCurriculum(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-
+	err = service.HashSet(teachingClass, "setTime", setTime)
+	if err != nil {
+		fmt.Println("将开课时间存入教学班信息失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
 	tool.Success(ctx, 200, "教学信息设置成功")
 }
 
