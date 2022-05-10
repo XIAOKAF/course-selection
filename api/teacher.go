@@ -234,15 +234,9 @@ func studentsSelection(ctx *gin.Context) {
 				flag = false
 			}
 			//学生性别
-			sex, err := service.HashGet(k, "gender")
+			student.Gender, err = service.HashGet(k, "gender")
 			if err != nil {
 				fmt.Println("获取学生性别错误", err)
-				tool.Failure(ctx, 500, "服务器错误")
-				flag = false
-			}
-			student.Gender, err = strconv.Atoi(sex)
-			if err != nil {
-				fmt.Println("string转int错误", err)
 				tool.Failure(ctx, 500, "服务器错误")
 				flag = false
 			}
