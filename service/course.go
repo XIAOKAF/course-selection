@@ -6,11 +6,6 @@ import (
 	"sort"
 )
 
-// SelectCourse 查询课程是否已经存在
-func SelectCourse(courseNumber string) (error, bool) {
-	return dao.SIsMember("course", courseNumber)
-}
-
 // CreateCourse mysql插入新的课程信息
 func CreateCourse(course model.Course) error {
 	err := dao.CreateCourse(course)
