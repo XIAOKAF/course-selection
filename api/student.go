@@ -471,7 +471,7 @@ func selection(ctx *gin.Context) {
 
 	teaching := model.Selection{}
 	var teachingSum []model.Selection
-	for i, v := range courseNumberArr {
+	for _, v := range courseNumberArr {
 		if v != "studentId" {
 			teaching.CourseNumber = v
 			teaching.CourseCredit, err = service.HashGet(v, "courseCredit")
@@ -514,7 +514,7 @@ func selection(ctx *gin.Context) {
 				tool.Failure(ctx, 500, "服务器错误")
 				return
 			}
-			teachingSum[i] = teaching
+			teachingSum = append(teachingSum, teaching)
 		}
 	}
 
