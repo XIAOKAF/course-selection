@@ -394,32 +394,33 @@ func chooseCourse(ctx *gin.Context) {
 		if len(selectedTeachingClassArr) > 1 {
 			var selectedTimeArr []string
 			for _, v := range selectedTeachingClassArr {
-				selectedTime, err := service.HashGet(v, "setTime")
+				if v != tokenClaims.Identify {
+					selectedTime, err := service.HashGet(v, "setTime")
+					if err != nil {
+						fmt.Println("查询课程开设时间失败", err)
+						tool.Failure(ctx, 500, "服务器错误")
+						return
+					}
+					timeArr := strings.Split(selectedTime, ",")
+					for _, val := range timeArr {
+						selectedTimeArr = append(selectedTimeArr, val)
+					}
+				}
+				//查询当前所选课程时间
+				setTime, err := service.HashGet(teachingClass, "setTime")
 				if err != nil {
-					fmt.Println("查询课程开设时间失败", err)
+					fmt.Println("查询当前所选课程开设时间出错", err)
 					tool.Failure(ctx, 500, "服务器错误")
 					return
 				}
-				timeArr := strings.Split(selectedTime, ",")
-				for _, val := range timeArr {
-					selectedTimeArr = append(selectedTimeArr, val)
+				setTimeArr := strings.Split(setTime, ",")
+
+				//判断课程是否存在时间冲突
+				ok := service.JudgeTimeConflict(selectedTimeArr, setTimeArr)
+				if ok {
+					tool.Failure(ctx, 400, "课程存在时间冲突")
+					return
 				}
-			}
-
-			//查询当前所选课程时间
-			setTime, err := service.HashGet(teachingClass, "setTime")
-			if err != nil {
-				fmt.Println("查询当前所选课程开设时间出错", err)
-				tool.Failure(ctx, 500, "服务器错误")
-				return
-			}
-			setTimeArr := strings.Split(setTime, ",")
-
-			//判断课程是否存在时间冲突
-			ok := service.JudgeTimeConflict(selectedTimeArr, setTimeArr)
-			if ok {
-				tool.Failure(ctx, 400, "课程存在时间冲突")
-				return
 			}
 		}
 
