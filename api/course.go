@@ -81,7 +81,32 @@ func createCurriculum(ctx *gin.Context) {
 		return
 	}
 
-	err = service.RCreateCourse(course)
+	err = service.HashSet(courseNumber, "courseName", course.CourseName)
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(courseNumber, "courseGrade", course.CourseGrade)
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(courseNumber, "courseDepartment", course.CourseDepartment)
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	variety := strconv.Itoa(course.CourseType)
+	err = service.HashSet(courseNumber, "courseType", variety)
+	if err != nil {
+		fmt.Println("将课程信息存入redis失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+	err = service.HashSet(courseNumber, "duration", course.Duration)
 	if err != nil {
 		fmt.Println("将课程信息存入redis失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
