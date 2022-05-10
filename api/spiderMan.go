@@ -27,7 +27,7 @@ func spiderMan(ctx *gin.Context) {
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
 	req.Header.Set("Referer", "http://jwzx.cqupt.edu.cn/kebiao/kb_stu.php?xh=2021212196")
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-	req.Header.Set("cookie", "mLvnBZTNP4mtS=565PBR7jNqVZ5YjbZ63CBI9r1yzWMqDldJPIZW5JwfGupX9UaXLaXP4HRep2I7vGK8FU65eSLzC_9OLAIcYIRBq; PHPSESSID=ST-401632-ej2QGXjh6MBlvN0FecdEHagCJzEauthserver2; mLvnBZTNP4mtT=yTO6AhGoqE1gTIvi2OJmhMq0zGBBDf5Xlia5my6G1b.bv2_iLSmUX82X.jIKr3_WORrf2gnnQACjHkn9GHNTZj1R5NnlyblP8dQxoxplF_xl_zeRyvl7BQ.cTd2wGI7vuNHgk3Am6Oveqe7XMlAteFJ0MrdUnk8iT8sHbU9dP_JCYdQLNhfRtTqNK1kZR9D072zCzJNWOgvUvR_6Xf2qKm_kFIMsmX0FGLkxfaG22fKR27jh0CiXP5FJZmz4ivLwUElRs8zzbE.MtuKhx3DVKcXKrP3H4__YJEZ518wcbFKGu0.SJBkc2jfJmO5YaKy9aZjAUqzdYtP4h.inSZQ5VbMXvTfW4KjBHqzvqXVK0p4gyuK2x9Q1p3isni6h_bbRhAGfKHqJARhFupiYr8vl5a")
+	req.Header.Set("cookie", "mLvnBZTNP4mtS=565PBR7jNqVZ5YjbZ63CBI9r1yzWMqDldJPIZW5JwfGupX9UaXLaXP4HRep2I7vGK8FU65eSLzC_9OLAIcYIRBq; PHPSESSID=ST-528345-o3-HgQ-F7EwRywjn2lQzAaYdFLQauthserver1; mLvnBZTNP4mtT=DxluYf8_dMOvA2UHBC4KvjYag55Tu7ZvUYC7Xzwpz_E5BrsZI1UtWKlI1epNh2d.3X97MCYW2JJNZOWJvd_sjIgLPPrcotjDRrEeWUJJqzkeiULmT5S.xpc5wyfYfea.LX9DVSqWdJyCFWFIgBVFBu.o6wOYNUK9SWJvIBa387kyWyW9yvFjxcwhKse7EWVSnJ8so1TeyfH3WgrEXD8y0Z1lkj7fUlYf1DsvfcJIDwiFGEAHSHgiPvt6I6RQjoh3BifeUyFFpvTNXgaDZPACpeoG6mbiAeKeSL2BIst7fYCDXke5GM1_CYgZ3NMUQALL2Zq9mqiIqSg2UndLE9fvjpkDl9gGucrgX0Z1aEXIP59")
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("网络请求失败", err)
@@ -67,11 +67,6 @@ func spiderMan(ctx *gin.Context) {
 					return
 				}
 				sex := s.Find("td:nth-child(4)").Text()
-				if sex == "女" {
-					student.Gender = 2
-				} else {
-					student.Gender = 1
-				}
 				student.Class = s.Find("td:nth-child(5)").Text()
 				student.Major = s.Find("td:nth-child(7)").Text()
 				student.Department = s.Find("td:nth-child(8)").Text()
@@ -124,7 +119,7 @@ func spiderMan(ctx *gin.Context) {
 					tool.Failure(ctx, 500, "服务器错误")
 					return
 				}
-				err = service.HashSet(student.StudentId, "ruleId", "1")
+				err = service.HashSet(student.StudentId, "roleLevel", "student")
 				if err != nil {
 					fmt.Println("储存学生权限等级错误", err)
 					tool.Failure(ctx, 500, "服务器错误")
