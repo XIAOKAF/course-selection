@@ -34,7 +34,7 @@ func sendSms(ctx *gin.Context) {
 
 	//解析短信配置文件
 	var sms model.Message
-	sms, err = service.ParseSmsConfig(sms)
+	sms, err = service.ParseSmsConfig()
 	if err != nil {
 		fmt.Println("解析短信配置文件错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
@@ -42,7 +42,7 @@ func sendSms(ctx *gin.Context) {
 	}
 
 	//连接
-	credential := common.NewCredential(sms.SignId, sms.SecretKey)
+	credential := common.NewCredential(sms.SecretId, sms.SecretKey)
 	cpf := profile.NewClientProfile()
 	cpf.HttpProfile.Endpoint = "sms.tencentcloudapi.com"
 	client, err := tencentsms.NewClient(credential, "ap-guangzhou", cpf)
@@ -56,20 +56,21 @@ func sendSms(ctx *gin.Context) {
 	request.SignName = common.StringPtr(sms.Sign)
 	request.SenderId = common.StringPtr("")
 	request.ExtendCode = common.StringPtr("")
-	request.TemplateParamSet = common.StringPtrs([]string{code})
+	request.TemplateParamSet = common.StringPtrs([]string{code, "5"})
 	request.TemplateId = common.StringPtr(sms.TemplateId)
 	request.PhoneNumberSet = common.StringPtrs([]string{"+86" + mobile})
 
 	//发送短信
 	_, err = client.SendSms(request)
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("发送短信错误", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
 
 	//将验证码存入redis之中并且设置过期时间(mobile+"code"-verifiedCode)
-	err = service.Set(mobile+"code", code, 2)
+	err = service.Set(mobile+"code", code, 5)
 	if err != nil {
 		fmt.Println("储存验证码错误", err)
 		tool.Failure(ctx, 200, "服务器错误")
