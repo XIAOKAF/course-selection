@@ -26,7 +26,7 @@ func RCreateCourse(course model.Course) error {
 	courseMap["courseCredit"] = course.CourseCredit
 	courseMap["courseType"] = course.CourseType
 	courseMap["duration"] = course.Duration
-	err := dao.HashSet(course.CourseNumber, courseMap)
+	err := dao.HashSet(course.CourseNumber+"detail", courseMap)
 	return err
 }
 
