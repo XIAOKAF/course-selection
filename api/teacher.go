@@ -112,15 +112,10 @@ func getTeachingClass(ctx *gin.Context) {
 
 	var teachingClassInfo model.TeachingClassInfo
 	var infoArr []model.TeachingClassInfo
-	for i, v := range teachingArr {
-		teachingClassInfo.TeachingClassNumber = v
+	for _, v := range teachingArr {
+		teachingClassInfo.TeachingClassNumber = "class1"
 		//课程id
-		teachingClassInfo.Course.CourseNumber, err = service.HashGet(v, "courseNumber")
-		if err != nil {
-			fmt.Println("查询课程编号失败", err)
-			tool.Failure(ctx, 500, "服务器错误")
-			return
-		}
+		teachingClassInfo.CourseNumber = v
 		//课程名称
 		teachingClassInfo.Course.CourseName, err = service.HashGet(teachingClassInfo.CourseNumber, "courseName")
 		if err != nil {
@@ -163,21 +158,22 @@ func getTeachingClass(ctx *gin.Context) {
 			return
 		}
 		//教学班开设时间
-		teachingClassInfo.SetTime, err = service.HashGet(v, "setTime")
+		teachingClassInfo.SetTime, err = service.HashGet(teachingClassInfo.TeachingClassNumber, "setTime")
 		if err != nil {
 			fmt.Println("查询教学班开设时间失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
+
 		//选课人数
-		err, studentArr := service.HKeys(v)
+		err, studentArr := service.HKeys(teachingClassInfo.TeachingClassNumber)
 		if err != nil {
 			fmt.Println("查询选课学生失败", err)
 			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		teachingClassInfo.StudentSum = len(studentArr) - 2
-		infoArr[i] = teachingClassInfo
+		teachingClassInfo.StudentSum = len(studentArr) - 3
+		infoArr = append(infoArr, teachingClassInfo)
 	}
 	tool.Success(ctx, http.StatusOK, infoArr)
 }

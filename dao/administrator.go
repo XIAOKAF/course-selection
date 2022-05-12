@@ -11,8 +11,8 @@ func AdministratorLogin(administrator model.Administrator) (error, string) {
 }
 
 // Cancel 注销学生账号
-func Cancel(unifiedCode string) error {
+func Cancel(studentId string) error {
 	var student model.Student
-	result := DB.Where("unifiedCode = ?", unifiedCode).Delete(&student)
+	result := DB.Where("student_id = ?", studentId).Delete(&student)
 	return result.Error
 }

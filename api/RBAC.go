@@ -6,35 +6,44 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/storyicon/grbac"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 )
 
 func Authorization(ctx *gin.Context) {
-	//获取用户账号
-	userNumber := ctx.PostForm("userNumber")
-	//获取角色权限等级
-	roleLevel, err := service.HashGet("role", userNumber)
-	tool.DealWithErr(ctx, err, "从redis中获取权限等级错误")
-	roles := strings.Fields(roleLevel)
-	//通过权限等级获取权限（解析yaml文件中的权限配置
-	//判断角色是否有权限
-	//以一分钟的频率获取最新的身份
-	rbac, err := grbac.New(grbac.WithLoader(service.ParseRule, time.Minute))
+	rbac, err := grbac.New(grbac.WithJSON("config/ruleConfig.json", time.Minute*10))
 	if err != nil {
-		tool.Failure(ctx, 400, "你还没有这个权限哦")
-		log.Fatal("解析权限配置文件错误", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		log.Fatal("解析权限配置文件失败", err)
+	}
+	//获取并解析token
+	tokenString := ctx.Request.Header.Get("token")
+	if tokenString == "" {
+		tool.Failure(ctx, 401, "token不能为空")
 		return
 	}
+	tokenClaims, err := service.ParseToken(tokenString)
+	if err != nil {
+		tool.Failure(ctx, 500, "服务器错误")
+		ctx.Abort()
+		log.Fatal("token解析失败", err)
+	}
+	//获取角色权限等级
+	roleLevel, err := service.HashGet(tokenClaims.Identify, "roleLevel")
+	if err != nil {
+		tool.Failure(ctx, 500, "服务器错误")
+		log.Fatal("查询角色权限等级失败", err)
+	}
+	roles := strings.Split(roleLevel, ",")
+	//鉴权
 	state, err := rbac.IsRequestGranted(ctx.Request, roles)
 	if err != nil {
 		tool.Failure(ctx, 500, "服务器错误")
-		log.Fatal("查询用户等级错误", err)
-		return
+		log.Fatal("鉴权失败", err)
 	}
-	if !state.IsGranted() {
-		tool.Failure(ctx, http.StatusUnauthorized, "未满十八岁🈲止访问")
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+
+	if state.IsGranted() {
+		tool.Failure(ctx, 400, "不相互打扰是你的温柔")
+		ctx.Abort()
 	}
 }

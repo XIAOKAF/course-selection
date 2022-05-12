@@ -97,7 +97,7 @@ func cancel(ctx *gin.Context) {
 		return
 	}
 	//查询该学生是否存在
-	_, err := service.HashGet(studentId, "mobile")
+	_, err := service.HashGet("student", studentId)
 	if err != nil {
 		if err == redis.Nil {
 			tool.Failure(ctx, 400, "该学生不存在")
@@ -128,6 +128,13 @@ func cancel(ctx *gin.Context) {
 		return
 	}
 
+	err = service.HDelSingle("student", studentId)
+	if err != nil {
+		fmt.Println("删除学生失败", err)
+		tool.Failure(ctx, 500, "服务器错误")
+		return
+	}
+
 	tool.Success(ctx, http.StatusOK, "已经将该学生删除")
 }
 
@@ -145,24 +152,53 @@ func inviteTeacher(ctx *gin.Context) {
 		TeacherName: teacherName,
 		RuleLevel:   2,
 	}
-	err := service.InsertTeacher(teacher)
-	if err != nil {
-		fmt.Println("存储教师信息失败", err)
+
+	_, err := service.HashGet("teacher", teacherNumber)
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询教师是否存在失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	err = service.HashSet(teacherNumber, "teacherName", teacherName)
-	if err != nil {
-		fmt.Println("存储教师信息失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
+
+	if err == redis.Nil {
+		err = service.InsertTeacher(teacher)
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		err = service.HashSet(teacherNumber, "teacherName", teacherName)
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		err = service.HashSet(teacherNumber, "password", "123")
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		err = service.HashSet(teacherNumber, "teacherId", teacherId)
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		err = service.HashSet(teacherNumber, "roleLevel", "teacher")
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		err = service.HashSet("teacher", teacherNumber, teacherId)
+		if err != nil {
+			fmt.Println("存储教师信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		tool.Success(ctx, 200, "successfully!")
 		return
 	}
-	err = service.HashSet(teacherNumber, "teacherId", teacherId)
-	if err != nil {
-		fmt.Println("存储教师信息失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
-	err = service.HashSet(teacherNumber, "roleLevel", "teacher")
-	tool.Success(ctx, 200, "successfully!")
+	tool.Failure(ctx, 400, "教师已经被邀请过啦")
 }

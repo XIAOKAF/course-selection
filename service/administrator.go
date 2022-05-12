@@ -13,7 +13,7 @@ func AdministratorLogin(administrator model.Administrator) (error, string) {
 	return nil, password
 }
 
-func Cancel(unifiedCode string) error {
-	err := dao.Cancel(unifiedCode)
+func Cancel(studentId string) error {
+	err := dao.Cancel(studentId)
 	return err
 }

@@ -9,8 +9,6 @@ func InitEngine() {
 
 	//跨域
 	engine.Use(Cors)
-	//鉴权
-	engine.Use(Authorization)
 
 	//短信接口
 	SmsGroup := engine.Group("/Sms")
@@ -23,7 +21,9 @@ func InitEngine() {
 	engine.POST("/administratorLogin", administratorLogin) //管理员登录
 	administratorGroup := engine.Group("/administrator")
 	{
-		administratorGroup.Use(parseToken)                             //解析token
+		administratorGroup.Use(parseToken)
+		administratorGroup.Use(Authorization)
+
 		administratorGroup.POST("/spiderMan", spiderMan)               //导入学生信息
 		administratorGroup.POST("/createCurriculum", createCurriculum) //开设新的课程
 		administratorGroup.POST("/detailCurriculum", detailCurriculum) //开设教学班
@@ -34,16 +34,18 @@ func InitEngine() {
 	//学生接口
 	engine.POST("/studentRegister", studentRegister)   //学生注册
 	engine.POST("/loginByStudentId", loginByStudentId) //密码登录
+	engine.POST("/changePwdByCode", changePwdByCode)   //验证码修改密码
 	studentGroup := engine.Group("/student")
 	{
-		studentGroup.Use(parseToken)                           //解析token
-		studentGroup.POST("/changePwdByCode", changePwdByCode) //验证码修改密码
-		studentGroup.POST("/updateAvatar", updateAvatar)       //更新头像
-		studentGroup.GET("/selectInfo", selectInfo)            //查询学生信息
-		studentGroup.GET("/getAvatar", getAvatar)              //获取学生头像
-		studentGroup.POST("/chooseCourse", chooseCourse)       //选课
-		studentGroup.GET("/selection", selection)              //学生查询自己的选课信息
-		studentGroup.DELETE("/quit", quit)                     //学生退出班级
+		studentGroup.Use(Authorization)
+		studentGroup.Use(parseToken)
+
+		studentGroup.POST("/updateAvatar", updateAvatar) //更新头像
+		studentGroup.GET("/selectInfo", selectInfo)      //查询学生信息
+		studentGroup.GET("/getAvatar", getAvatar)        //获取学生头像
+		studentGroup.POST("/chooseCourse", chooseCourse) //选课
+		studentGroup.GET("/selection", selection)        //学生查询自己的选课信息
+		studentGroup.DELETE("/quit", quit)               //学生退出班级
 	}
 
 	//教师接口
@@ -51,6 +53,8 @@ func InitEngine() {
 	teacherGroup := engine.Group("/teacher")
 	{
 		teacherGroup.Use(parseToken)
+		engine.Use(Authorization)
+
 		teacherGroup.GET("/getTeachingClass", getTeachingClass)  //获取所有教学班
 		teacherGroup.GET("/studentSelection", studentsSelection) //获取选择教学班的同学信息
 	}
@@ -59,9 +63,11 @@ func InitEngine() {
 	courseGroup := engine.Group("/course")
 	{
 		courseGroup.Use(parseToken)
-		courseGroup.GET("/getAllCourse", getAllCourse)           //获取所有课程详情
-		courseGroup.GET("/getSpecificCourse", getSpecificCourse) //模糊搜索
+		engine.Use(Authorization)
+
+		courseGroup.GET("/getAllCourse", getAllCourse) //获取所有课程详情
+		//courseGroup.GET("/getSpecificCourse", getSpecificCourse) //模糊搜索
 	}
 
-	engine.Run(":8080")
+	engine.Run(":8090")
 }

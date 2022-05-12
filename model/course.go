@@ -20,7 +20,7 @@ type Selection struct {
 }
 
 type TeachingClassInfo struct {
-	*Course
+	Course
 	TeachingClassNumber string
 	SetTime             string
 	StudentSum          int

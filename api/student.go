@@ -41,13 +41,23 @@ func studentRegister(ctx *gin.Context) {
 		tool.Failure(ctx, 400, "密码错误（提示一下哦，初始密码是姓名拼音")
 		return
 	}
-	err = service.HashSet(mobile, "studentId", studentId)
-	if err != nil {
-		fmt.Println("储存学生信息失败", err)
+	_, err = service.HashGet(mobile, "studentId")
+	if err != nil && err != redis.Nil {
+		fmt.Println("查询学生信息失败", err)
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-	tool.Success(ctx, 200, "注册成功")
+	if err == redis.Nil {
+		err = service.HashSet(mobile, "studentId", studentId)
+		if err != nil {
+			fmt.Println("储存学生信息失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
+			return
+		}
+		tool.Success(ctx, 200, "注册成功")
+		return
+	}
+	tool.Failure(ctx, 400, "已经注册过了，直接登录吧o(*￣▽￣*)ブ")
 }
 
 //学号密码登录
@@ -243,17 +253,20 @@ func selectInfo(ctx *gin.Context) {
 		tool.Failure(ctx, 500, "服务器错误")
 		return
 	}
-
-	grade, err := service.HashGet(tokenClaims.Identify, "grade")
-	if err != nil {
-		if err == redis.Nil {
-			tool.Failure(ctx, 400, "token错误")
+	/*
+		grade, err := service.HashGet(tokenClaims.Identify, "grade")
+		if err != nil {
+			if err == redis.Nil {
+				fmt.Println(err)
+				tool.Failure(ctx, 400, "token错误")
+				return
+			}
+			fmt.Println("获取学生年级失败", err)
+			tool.Failure(ctx, 500, "服务器错误")
 			return
 		}
-		fmt.Println("获取学生年级失败", err)
-		tool.Failure(ctx, 500, "服务器错误")
-		return
-	}
+
+	*/
 
 	class, err := service.HashGet(tokenClaims.Identify, "class")
 	if err != nil {
@@ -290,11 +303,12 @@ func selectInfo(ctx *gin.Context) {
 		StudentId:   tokenClaims.Identify,
 		StudentName: studentName,
 		Gender:      g,
-		Grade:       grade,
-		Class:       class,
-		Department:  department,
-		Major:       major,
-		RuleId:      "student",
+		//Grade:       grade,
+		Class:      class,
+		Mobile:     tokenClaims.Identify,
+		Department: department,
+		Major:      major,
+		RuleId:     "student",
 	}
 	tool.Success(ctx, 200, student)
 }
@@ -517,7 +531,6 @@ func selection(ctx *gin.Context) {
 			teachingSum = append(teachingSum, teaching)
 		}
 	}
-
 	tool.Success(ctx, http.StatusOK, teachingSum)
 }
 
